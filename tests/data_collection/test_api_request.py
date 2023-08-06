@@ -19,14 +19,16 @@ import requests_mock
 current_script_path = os.path.abspath(__file__)
 # Getting the directory of the current script file
 current_script_dir = os.path.dirname(current_script_path)
-# Constructing the absolute path of the src/01_data_collection directory
-src_dir = os.path.join(current_script_dir, '../..', 'src', 'data_collection')
+# Constructing the absolute path of the project root
+root_dir = os.path.join(current_script_dir, '../..')
+sys.path.append(root_dir)
+from config import NYT_api_key
+# Constructing the absolute path of the src/data_collection directory
+src_dir = os.path.join(root_dir, 'src', 'data_collection')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
 from api_request import api_request
 
-
-NYT_api_key = "pNHWGr1vumfKOJ2QwkQHELoH5zbhslrp"
 
 
 def test_api_request():
