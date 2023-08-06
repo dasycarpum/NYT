@@ -17,6 +17,15 @@ pipeline {
                 stash(name: 'compiled-results', includes: 'src/**/*.py*')
             }
         }
+
+        stage('Unit Tests') {
+            steps {
+                sh '''
+                    echo "Running pytest in tests/data_collection/"
+                    pytest tests/data_collection/
+                '''
+            }
+        }
     }
 }
 
