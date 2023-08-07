@@ -51,6 +51,21 @@ pipeline {
                 }
             }
         }
+
+        stage('Docker Build') {
+            steps {
+                script {
+                    def imageName = "nyt-app"
+                    def imageTag = "latest"
+                    
+                    sh '''#!/bin/bash
+                        echo "Building Docker image..."
+                        docker build -t ${imageName}:${imageTag} .
+                    '''
+                }
+            }
+        }
+
     }
 }
 
