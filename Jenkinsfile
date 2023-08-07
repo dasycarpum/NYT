@@ -41,6 +41,8 @@ pipeline {
             steps {
                 script {
                     def imageName = "nyt-app:test"
+
+                    sh "docker rmi -f ${imageName} || true"
         
                     sh "docker build -t ${imageName} ."
         
@@ -64,6 +66,8 @@ pipeline {
                 script {
                     def imageName = "nyt-app"
                     def imageTag = "latest"
+
+                    sh "docker rmi -f ${imageName}:${imageTag} || true"
                     
                     sh """
                         echo "Building Docker image..."
