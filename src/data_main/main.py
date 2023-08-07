@@ -23,19 +23,29 @@ sys.path.append(src_dir)
 from config import NYT_api_key
 from src.data_collection.api_nyt import get_nyt_book_categories, get_nyt_bestsellers
 
+
+
 def main():
     """
     Execute the main for data collection, extraction, transformation, loading, and announcement.
     
     """
+    year = os.environ.get("YEAR")
+    month = os.environ.get("MONTH")
+    day = os.environ.get("DAY")
+
+    # Validate the values
+    if not year or not month or not day:
+        raise ValueError("Please provide YEAR, MONTH, and DAY as environment variables.")
 
     list_of_categories = get_nyt_book_categories(NYT_api_key)
     print(list_of_categories)
 
-    get_nyt_bestsellers(NYT_api_key,
-                        ["Hardcover Fiction", "Picture Books"],
-                        year=2022, month=7, day=3)
-    
+    get_nyt_bestsellers(NYT_api_key, ["Hardcover Fiction", "Picture Books"], year=int(year), month=int(month), day=int(day))
+
+
 
 if __name__ == "__main__":
     main()
+
+
