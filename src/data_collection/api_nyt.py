@@ -9,6 +9,7 @@ Created on 2023-05-18
 
 """
 
+import os
 import time
 from datetime import datetime
 import json
@@ -16,7 +17,6 @@ import pandas as pd
 import requests
 from pynytimes import NYTAPI
 
-# import api_request
 from src.data_collection.api_request import api_request
 
 
@@ -145,9 +145,15 @@ def save_as_json(data, year, month, day):
     Raises:
         FileNotFoundError: If the specified file path does not exist.
         TypeError: If the provided data object is not serializable.
+    
     """
+    path = 'data/raw_data'
+    
+    if not os.path.exists(path):
+        os.makedirs(path)
+
     try:
-        with open('data/raw_data/best_sellers_{}_{}_{}.json'.format(year, month, day), 'w', encoding='utf-8') as jsonfile: 
+        with open('{}/best_sellers_{}_{}_{}.json'.format(path, year, month, day), 'w', encoding='utf-8') as jsonfile: 
             json.dump(data, jsonfile)
     except FileNotFoundError:
         print("Error: File not found.")
@@ -218,6 +224,4 @@ def get_nyt_bestsellers(api_key, categories, year=2022, month=None, day=None):
                     full_list_of_books.append(book)
 
     save_as_json(full_list_of_books, year, month, day)
-
-
 
