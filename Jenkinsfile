@@ -58,14 +58,14 @@ pipeline {
                     def imageName = "nyt-app"
                     def imageTag = "latest"
                     
-                    sh '''#!/bin/bash
+                    sh """
                         echo "Building Docker image..."
                         docker build -t ${imageName}:${imageTag} .
-                    '''
+                    """
                 }
             }
         }
-
     }
 }
+
 
