@@ -39,11 +39,18 @@ pipeline {
 
         stage('Unit Tests') {
             steps {
-                sh '''#!/bin/bash
-                    source .NYT/bin/activate
-                    echo "Running pytest in tests/data_collection/"
-                    pytest -vv --junitxml=tests/test-results.xml tests/data_collection/
-                '''
+                script {
+                    def imageName = "nyt-app:test"
+        
+                    sh "docker build -t ${imageName} ."
+        
+                    sh """
+                        docker run --rm \
+                            ${imageName} \
+                            pytest -vv --junitxml=/app/tests/test-results.xml /app/tests/data_collection/
+                    """
+                    sh 'docker cp $(docker create ' + "${imageName}" + '):/app/tests/test-results.xml tests/test-results.xml'
+                }
             }
             post {
                 always {
