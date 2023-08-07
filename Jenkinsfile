@@ -42,11 +42,15 @@ pipeline {
                 sh '''#!/bin/bash
                     source .NYT/bin/activate
                     echo "Running pytest in tests/data_collection/"
-                    pytest tests/data_collection/
+                    pytest -vv --junitxml=tests/test-results.xml tests/data_collection/
                 '''
+            }
+            post {
+                always {
+                    junit 'tests/test-results.xml'
+                }
             }
         }
     }
 }
-
 
