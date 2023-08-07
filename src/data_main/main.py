@@ -22,7 +22,7 @@ src_dir = os.path.join(current_script_dir, '../..')
 sys.path.append(src_dir)
 from config import NYT_api_key
 from src.data_collection.api_nyt import get_nyt_book_categories, get_nyt_bestsellers
-
+from src.data_collection.json_tools import json_field_to_list
 
 
 def main():
@@ -30,6 +30,7 @@ def main():
     Execute the main for data collection, extraction, transformation, loading, and announcement.
     
     """
+    
     year = os.environ.get("YEAR")
     month = os.environ.get("MONTH")
     day = os.environ.get("DAY")
@@ -43,6 +44,8 @@ def main():
 
     get_nyt_bestsellers(NYT_api_key, ["Hardcover Fiction", "Picture Books"], year=int(year), month=int(month), day=int(day))
 
+    list_of_values = json_field_to_list("data/raw_data/best_sellers_{}_{}_{}.json".format(int(year), int(month), int(day)), 'buy_links', 'Apple Books')
+    print(list_of_values)
 
 
 if __name__ == "__main__":
