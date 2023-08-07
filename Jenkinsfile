@@ -31,7 +31,7 @@ pipeline {
             steps {
                 sh '''#!/bin/bash
                     source .NYT/bin/activate
-                    python -m py_compile src/data_collection/api_request.py
+                    python -m py_compile src/data_main/main.py
                 '''
                 stash(name: 'compiled-results', includes: 'src/**/*.py*')
             }
