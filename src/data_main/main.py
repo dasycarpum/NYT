@@ -21,7 +21,7 @@ src_dir = os.path.join(current_script_dir, '../..')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
 from config import NYT_api_key
-from src.data_collection.api_request import api_request
+from src.data_collection.api_nyt import get_nyt_book_categories, get_nyt_bestsellers
 
 def main():
     """
@@ -29,11 +29,12 @@ def main():
     
     """
 
-    endpoint = "https://api.nytimes.com/svc/books/v3/lists/names.json?"
+    list_of_categories = get_nyt_book_categories(NYT_api_key)
+    print(list_of_categories)
 
-    df = api_request(endpoint, NYT_api_key)
-    
-    print(df.shape)
+    get_nyt_bestsellers(NYT_api_key,
+                        ["Hardcover Fiction", "Picture Books"],
+                        year=2022, month=7, day=3)
     
 
 if __name__ == "__main__":
