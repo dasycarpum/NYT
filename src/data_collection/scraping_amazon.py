@@ -21,17 +21,14 @@ from datetime import datetime
 import re
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.common.exceptions import NoSuchElementException, WebDriverException
-from webdriver_manager.firefox import GeckoDriverManager
+from selenium.webdriver import FirefoxOptions
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from urllib3.exceptions import MaxRetryError
-
-
 
 
 
@@ -313,14 +310,13 @@ def scrape_amazon_books(url):
     # Adding a retry loop to handle connectivity issues to the Selenium server.
     max_attempts = 10  # maximum number of connection attempts
     
+    options = FirefoxOptions()
+
     for attempt in range(max_attempts):
         try:
-            """
             driver = webdriver.Remote(
                 command_executor='http://firefox:4444/wd/hub',
-                desired_capabilities=DesiredCapabilities.FIREFOX)
-            """
-            driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
+                options=options)
             delay = random.uniform(2.1, 5.1)  # generate random delay
             time.sleep(delay)
             break

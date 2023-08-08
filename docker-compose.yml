@@ -1,0 +1,25 @@
+# Created on 2023-08-01
+
+# @author: Roland
+
+# @abstract: this Docker Compose file defines two services: an application service built from a local Dockerfile and a Firefox/Selenium service for web automation.
+
+version: '3.8'
+services:
+  
+  app:  # This is the application service
+    build:
+      context: .  # Build context is the current directory
+      dockerfile: Dockerfile  # Use this Dockerfile for building the image
+    volumes:
+      - .:/app  # Mount the application directory
+    depends_on:  # This service depends on db and firefox services
+      - firefox
+    command: python src/data_main/main.py  # Run the main.py script when container starts
+
+  firefox:  # This is the firefox/selenium service for web scraping
+    image: selenium/standalone-firefox  # Use the standalone Firefox image from Selenium
+    ports:
+      - "4444:4444"  # Expose the Selenium server port
+      - "7900:7900"  # Expose the NoVNC web interface port
+
