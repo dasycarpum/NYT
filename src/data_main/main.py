@@ -20,9 +20,7 @@ current_script_dir = os.path.dirname(current_script_path)
 src_dir = os.path.join(current_script_dir, '../..')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
-from config import NYT_api_key
-from src.data_collection.api_nyt import get_nyt_book_categories, get_nyt_bestsellers
-from src.data_collection.json_tools import json_field_to_list
+from src.data_collection.scraping_apple import scrape_apple_store_book
 
 
 def main():
@@ -31,24 +29,9 @@ def main():
     
     """
     
-    year = os.environ.get("YEAR")
-    month = os.environ.get("MONTH")
-    day = os.environ.get("DAY")
-
-    # Validate the values
-    if not year or not month or not day:
-        raise ValueError("Please provide YEAR, MONTH, and DAY as environment variables.")
-
-    list_of_categories = get_nyt_book_categories(NYT_api_key)
-    print(list_of_categories)
-
-    get_nyt_bestsellers(NYT_api_key, ["Hardcover Fiction", "Picture Books"], year=int(year), month=int(month), day=int(day))
-
-    list_of_values = json_field_to_list("data/raw_data/best_sellers_{}_{}_{}.json".format(int(year), int(month), int(day)), 'buy_links', 'Apple Books')
-    print(list_of_values)
-
+    genre = scrape_apple_store_book("https://goto.applebooks.apple/9781250284327?at=10lIEQ")
+    print(genre)
+    
 
 if __name__ == "__main__":
     main()
-
-
