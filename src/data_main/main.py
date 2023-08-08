@@ -21,6 +21,7 @@ src_dir = os.path.join(current_script_dir, '../..')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
 from src.data_collection.scraping_amazon import scrape_amazon_books
+from src.data_ingestion.extract_transform import create_of_review_table_items
 
 
 def main():
@@ -29,9 +30,11 @@ def main():
     
     """
     
-    data = scrape_amazon_books("https://www.amazon.com/dp/0593441273?tag=NYTBSREV-20")
+    amazon_data = scrape_amazon_books("https://www.amazon.com/dp/0593441273?tag=NYTBSREV-20")
     
-    print(data)
+    review = create_of_review_table_items(9999, amazon_data)
+
+    print(review)
     
 
 if __name__ == "__main__":
