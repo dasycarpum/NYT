@@ -41,22 +41,23 @@ pipeline {
             steps {
                 script {
                     def imageName = "nyt-app:test"
+                    def composeFile = "docker-compose.yml"
 
+                    sh "docker-compose -f ${composeFile} down -v"
                     sh "docker rmi -f ${imageName} || true"
-        
-                    sh "docker build -t ${imageName} ."
-        
+                    sh "docker-compose -f ${composeFile} build app"
+                    
                     sh """
-                        docker run --rm \
-                            ${imageName} \
+                        docker-compose -f ${composeFile} run --rm app \
                             pytest -vv --junitxml=/app/tests/test-results.xml /app/tests/data_collection/
                     """
-                    sh 'docker cp $(docker create ' + "${imageName}" + '):/app/tests/test-results.xml tests/test-results.xml'
+                    
+                    sh "cp ./tests/test-results.xml ./test-results.xml"
                 }
             }
             post {
                 always {
-                    junit 'tests/test-results.xml'
+                    junit 'test-results.xml'
                 }
             }
         }
@@ -66,13 +67,14 @@ pipeline {
                 script {
                     def imageName = "nyt-app"
                     def imageTag = "latest"
-        
+                    def composeFile = "docker-compose.yml"
+
                     sh "docker rmi -f ${imageName}:${imageTag} || true"
                     
-                    sh '''
+                    sh """
                         echo "Building Docker image using docker-compose..."
-                        docker-compose build
-                    '''
+                        docker-compose -f ${composeFile} build app
+                    """
                 }
             }
         }

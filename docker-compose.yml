@@ -16,8 +16,7 @@ services:
       - .:/app  # Mount the application directory
     depends_on:  # This service depends on db and firefox services
       - firefox
-    command: python src/data_main/main.py  # Run the main.py script when container starts
-
+    
   firefox:  # This is the firefox/selenium service for web scraping
     image: selenium/standalone-firefox  # Use the standalone Firefox image from Selenium
     ports:
