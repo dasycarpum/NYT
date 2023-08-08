@@ -20,7 +20,7 @@ current_script_dir = os.path.dirname(current_script_path)
 src_dir = os.path.join(current_script_dir, '../..')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
-from src.data_collection.scraping_apple import scrape_apple_store_book
+from src.data_collection.scraping_amazon import scrape_amazon_books
 
 
 def main():
@@ -29,8 +29,9 @@ def main():
     
     """
     
-    genre = scrape_apple_store_book("https://goto.applebooks.apple/9781250284327?at=10lIEQ")
-    print(genre)
+    data = scrape_amazon_books("https://www.amazon.com/dp/0593441273?tag=NYTBSREV-20")
+    
+    print(data)
     
 
 if __name__ == "__main__":
