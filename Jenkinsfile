@@ -49,18 +49,24 @@ pipeline {
                     
                     sh """
                         docker-compose -f ${composeFile} run --rm app \
-                            pytest -vv --junitxml=/app/tests/test-results.xml /app/tests/data_collection/
+                            pytest -vv --junitxml=/app/tests/test-results-data-collection.xml /app/tests/data_collection/
                     """
-                    
-                    sh "cp ./tests/test-results.xml ./test-results.xml"
+                    sh "cp ./tests/test-results-data-collection.xml ./test-results-data-collection.xml"
+
+                    sh """
+                        docker-compose -f ${composeFile} run --rm app \
+                            pytest -vv --junitxml=/app/tests/test-results-data-ingestion.xml /app/tests/data_ingestion/
+                    """
+                    sh "cp ./tests/test-results-data-ingestion.xml ./test-results-data-ingestion.xml"
                 }
             }
             post {
                 always {
-                    junit 'test-results.xml'
+                    junit '**/test-results-*.xml'
                 }
             }
         }
+
 
         stage('Docker Build and Compose') {
             steps {
