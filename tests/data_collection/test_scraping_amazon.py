@@ -108,7 +108,7 @@ def test_transform_url_for_specific_page_parametrized(url, page, expected):
     assert transform_url_for_specific_page(url, page) == expected
 
 # This test checks the functionality of the scrape_amazon_books function when a NoSuchElementException is encountered during execution.
-@patch('scraping_amazon.webdriver.Firefox')
+@patch('scraping_amazon.webdriver.Remote')
 def test_scrape_amazon_books_no_such_element(mock_firefox):
     # Mock the `scrape_amazon_book` function to raise NoSuchElementException
     with patch('scraping_amazon.scrape_amazon_book', side_effect=NoSuchElementException):
@@ -117,7 +117,7 @@ def test_scrape_amazon_books_no_such_element(mock_firefox):
         mock_firefox.return_value.quit.assert_called_once()
 
 #  This test is similar to the previous one, but instead checks for a WebDriverException.
-@patch('scraping_amazon.webdriver.Firefox')
+@patch('scraping_amazon.webdriver.Remote')
 def test_scrape_amazon_books_web_driver_exception(mock_firefox):
     # Mock the `scrape_amazon_book` function to raise WebDriverException
     with patch('scraping_amazon.scrape_amazon_book', side_effect=WebDriverException):
@@ -126,7 +126,7 @@ def test_scrape_amazon_books_web_driver_exception(mock_firefox):
         mock_firefox.return_value.quit.assert_called_once()
 
 # This test checks the functionality of the scrape_amazon_books function when it encounters an AttributeError.
-@patch('scraping_amazon.webdriver.Firefox')
+@patch('scraping_amazon.webdriver.Remote')
 def test_scrape_amazon_books_attribute_error(mock_firefox):
     # Mock the `scrape_amazon_book` function to raise AttributeError
     with patch('scraping_amazon.scrape_amazon_book', side_effect=AttributeError):
@@ -135,7 +135,7 @@ def test_scrape_amazon_books_attribute_error(mock_firefox):
         mock_firefox.return_value.quit.assert_called_once()
 
 # This test is checking the functionality of the scrape_amazon_books function when it encounters an unexpected or general Exception.
-@patch('scraping_amazon.webdriver.Firefox')
+@patch('scraping_amazon.webdriver.Remote')
 def test_scrape_amazon_books_general_exception(mock_firefox):
     # Mock the `scrape_amazon_book` function to raise a general Exception
     with patch('scraping_amazon.scrape_amazon_book', side_effect=Exception):
