@@ -8,6 +8,7 @@ version: '3.8'
 services:
   
   app:  # This is the application service
+    image: nyt-app:latest
     build:
       context: .  # Build context is the current directory
       dockerfile: Dockerfile  # Use this Dockerfile for building the image

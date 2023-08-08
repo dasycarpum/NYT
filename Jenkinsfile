@@ -61,18 +61,18 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
+        stage('Docker Build and Compose') {
             steps {
                 script {
                     def imageName = "nyt-app"
                     def imageTag = "latest"
-
+        
                     sh "docker rmi -f ${imageName}:${imageTag} || true"
                     
-                    sh """
-                        echo "Building Docker image..."
-                        docker build -t ${imageName}:${imageTag} .
-                    """
+                    sh '''
+                        echo "Building Docker image using docker-compose..."
+                        docker-compose build
+                    '''
                 }
             }
         }
