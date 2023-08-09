@@ -11,7 +11,7 @@ services:
   db:   # This is the database service
     image: nyt-db  # image to be used for the 'db' service.
     volumes:  # Mount local direct. as a vol. attached inside the 'db' container
-      - ./data/db:/var/lib/postgresql/data  
+      - dbdata:/var/lib/postgresql/data 
     ports: # Port 5432 of 'db' container ass. with port 5433 on host machine
       - "5433:5432"  
     environment:  # Used to create a new database at container startup
@@ -36,3 +36,5 @@ services:
       - "4444:4444"  # Expose the Selenium server port
       - "7900:7900"  # Expose the NoVNC web interface port
 
+volumes:
+  dbdata:
