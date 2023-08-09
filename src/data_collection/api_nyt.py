@@ -18,6 +18,7 @@ import requests
 from pynytimes import NYTAPI
 
 from src.data_collection.api_request import api_request
+from config import RAW_DATA_ABS_PATH
 
 
 def get_nyt_book_categories(api_key, max_year=2022):
@@ -147,7 +148,7 @@ def save_as_json(data, year, month, day):
         TypeError: If the provided data object is not serializable.
     
     """
-    path = 'data/raw_data'
+    path = RAW_DATA_ABS_PATH
     
     if not os.path.exists(path):
         os.makedirs(path)
@@ -212,7 +213,7 @@ def get_nyt_bestsellers(api_key, categories, year=2022, month=None, day=None):
             books_of_a_year.append(books_of_the_week)
             
             sleep()
-            print('date :', monday)
+            print('monday date :', monday)
 
         books_of_the_period.append(books_of_a_year) 
 

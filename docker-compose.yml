@@ -26,6 +26,10 @@ services:
       dockerfile: Dockerfile  # Use this Dockerfile for building the image
     volumes:
       - .:/app  # Mount the application directory
+    environment:  # Environment variables for the application service
+      YEAR: 2023
+      MONTH: 5
+      DAY: 22
     depends_on:  # This service depends on db and firefox services
       - db
       - firefox

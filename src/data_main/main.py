@@ -22,6 +22,7 @@ src_dir = os.path.join(current_script_dir, '../..')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
 from config import DB_ENGINE
+from src.data_main.raw_data_summary import data_collection
 
 
 def main():
@@ -29,18 +30,15 @@ def main():
     Execute the main for data collection, extraction, transformation, loading, and announcement.
     
     """
+    year = os.environ.get("YEAR")
+    month = os.environ.get("MONTH")
+    day = os.environ.get("DAY")
     
     # Create a SQLAlchemy engine that will interface with the database.
     engine = create_engine(DB_ENGINE)
 
-    with engine.connect() as connection:
-        result = connection.execute(text("SELECT id, data->>'url' as url, data->>'title' as title, data->>'author' as author FROM book WHERE id = (SELECT MAX(id) FROM book);"))
-        result = result.fetchall()
+    data_collection(year=int(year), month=int(month), day=int(day), engine= engine)
 
-    print("New bestseller :")
-    for (id_val, url, title, author) in result:
-        print(f"id: {id_val}, url: {url}, title: {title}, author: {author}")
 
-    
 if __name__ == "__main__":
     main()
