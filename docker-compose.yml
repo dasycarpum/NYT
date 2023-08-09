@@ -2,11 +2,23 @@
 
 # @author: Roland
 
-# @abstract: this Docker Compose file defines two services: an application service built from a local Dockerfile and a Firefox/Selenium service for web automation.
+# @abstract: this Docker Compose file defines 3 services: a database
+# service using a custom PostgreSQL image, an application service built from
+# a local Dockerfile, and a Firefox/Selenium service for web automation.
 
 version: '3.8'
 services:
-  
+  db:   # This is the database service
+    image: nyt-db  # image to be used for the 'db' service.
+    volumes:  # Mount local direct. as a vol. attached inside the 'db' container
+      - ./data/db:/var/lib/postgresql/data  
+    ports: # Port 5432 of 'db' container ass. with port 5433 on host machine
+      - "5433:5432"  
+    environment:  # Used to create a new database at container startup
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: nyt
+
   app:  # This is the application service
     image: nyt-app:latest
     build:
@@ -15,6 +27,7 @@ services:
     volumes:
       - .:/app  # Mount the application directory
     depends_on:  # This service depends on db and firefox services
+      - db
       - firefox
     
   firefox:  # This is the firefox/selenium service for web scraping
