@@ -25,7 +25,7 @@ current_script_dir = os.path.dirname(current_script_path)
 # Constructing the absolute path of the project root
 root_dir = os.path.join(current_script_dir, '../..')
 sys.path.append(root_dir)
-from config import NYT_api_key
+from config import NYT_api_key, RAW_DATA_ABS_PATH
 # Constructing the absolute path of the src/data_collection directory
 src_dir = os.path.join(root_dir, 'src', 'data_collection')
 # Adding the absolute path to system path
@@ -227,7 +227,7 @@ class TestSaveAsJson(unittest.TestCase):
 
         save_as_json(data, year, month, day)
 
-        mock_file.assert_called_once_with('data/raw_data/best_sellers_2023_7_17.json', 'w', encoding='utf-8')
+        mock_file.assert_called_once_with(RAW_DATA_ABS_PATH +'/best_sellers_2023_7_17.json', 'w', encoding='utf-8')
         mock_json_dump.assert_called_once_with(data, mock_file())
 
     # Test that a FileNotFoundError is raised when the file path does not exist.
