@@ -11,6 +11,7 @@ Created on 2023-07-25
 
 import os
 import sys
+from sqlalchemy import create_engine, text
 
 # Getting the absolute path of the current script file
 current_script_path = os.path.abspath(__file__)
@@ -20,8 +21,7 @@ current_script_dir = os.path.dirname(current_script_path)
 src_dir = os.path.join(current_script_dir, '../..')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
-from src.data_collection.scraping_amazon import scrape_amazon_books
-from src.data_ingestion.extract_transform import create_of_review_table_items
+from config import DB_ENGINE
 
 
 def main():
@@ -30,12 +30,17 @@ def main():
     
     """
     
-    amazon_data = scrape_amazon_books("https://www.amazon.com/dp/0593441273?tag=NYTBSREV-20")
-    
-    review = create_of_review_table_items(9999, amazon_data)
+    # Create a SQLAlchemy engine that will interface with the database.
+    engine = create_engine(DB_ENGINE)
 
-    print(review)
-    
+    with engine.connect() as connection:
+        result = connection.execute(text("SELECT id, data->>'url' as url, data->>'title' as title, data->>'author' as author FROM book WHERE id = (SELECT MAX(id) FROM book);"))
+        result = result.fetchall()
 
+    print("New bestseller :")
+    for (id_val, url, title, author) in result:
+        print(f"id: {id_val}, url: {url}, title: {title}, author: {author}")
+
+    
 if __name__ == "__main__":
     main()
