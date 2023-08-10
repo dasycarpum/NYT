@@ -11,7 +11,8 @@ Created on 2023-07-25
 
 import os
 import sys
-from sqlalchemy import create_engine, text
+import json
+from sqlalchemy import create_engine
 
 # Getting the absolute path of the current script file
 current_script_path = os.path.abspath(__file__)
@@ -21,8 +22,9 @@ current_script_dir = os.path.dirname(current_script_path)
 src_dir = os.path.join(current_script_dir, '../..')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
-from config import DB_ENGINE
+from config import DB_ENGINE, RAW_DATA_ABS_PATH
 from src.data_main.raw_data_summary import data_collection
+from src.data_main.raw_data_transformation import extract_transform
 
 
 def main():
@@ -38,6 +40,11 @@ def main():
     engine = create_engine(DB_ENGINE)
 
     data_collection(year=int(year), month=int(month), day=int(day), engine= engine)
+
+    with open(RAW_DATA_ABS_PATH + "raw_data.json", encoding='utf-8') as json_file:
+        raw_data = json.load(json_file)
+
+    extract_transform(raw_data['new_id'], raw_data['nyt_data'], raw_data['amazon_data'], raw_data['apple_data'])
 
 
 if __name__ == "__main__":

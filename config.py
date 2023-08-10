@@ -22,9 +22,7 @@ DB_PORT = '5432'
 DB_ENGINE='postgresql://'+DB_USER+':'+DB_PASS+'@'+DB_HOST+':'+DB_PORT+'/'+DB_NAME
 
 # Data paths
-RAW_DATA_PATH = 'data/raw_data/'
-PROCESSED_DATA_PATH = 'data/processed_data/'
-
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 PARENT_DIR = os.path.abspath(os.path.join(BASE_DIR, os.pardir, os.pardir))
 RAW_DATA_ABS_PATH = os.path.join(PARENT_DIR, 'data', 'raw_data', '')
+PROC_DATA_ABS_PATH = os.path.join(PARENT_DIR, 'data', 'processed_data', '')
