@@ -37,7 +37,7 @@ def save_to_file(data, filename, filetype='json'):
     """
     # Check if the directory exists and create if not
     directory = os.path.dirname(filename)
-    if not os.path.exists(directory):
+    if directory and not os.path.exists(directory):
         os.makedirs(directory)
 
     with open(filename, 'w', newline='', encoding='utf-8') as file:
