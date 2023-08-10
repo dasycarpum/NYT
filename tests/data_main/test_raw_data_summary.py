@@ -13,9 +13,8 @@ Created on 2023-07-25
 import os
 import sys
 import json
-from datetime import datetime
 from sqlalchemy import create_engine, text
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, mock_open
 import pytest
 
 # Getting the absolute path of the current script file
@@ -115,14 +114,15 @@ def test_empty_database(setup_nyt_file, tmpdir_factory):
 
 # This test is checking the functionality of the data_collection function when it is used normally
 def get_nyt_file_name(year, month, day):
-    return RAW_DATA_ABS_PATH + f'/best_sellers_{year}_{month}_{day}.json'
+    return RAW_DATA_ABS_PATH + f'best_sellers_{year}_{month}_{day}.json'
 
 @patch('raw_data_summary.nyt.get_nyt_book_categories')
 @patch('raw_data_summary.nyt.get_nyt_bestsellers')
 @patch('raw_data_summary.checking_for_a_new_bestseller')
 @patch('raw_data_summary.amazon.scrape_amazon_books')
 @patch('raw_data_summary.apple.scrape_apple_store_book')
-def test_data_collection_success(mock_scrape_apple_store_book, mock_scrape_amazon_books, mock_checking_for_a_new_bestseller, mock_get_nyt_bestsellers, mock_get_nyt_book_categories, setup_db):
+@patch("builtins.open", new_callable=mock_open)
+def test_data_collection_success(mock_open_file, mock_scrape_apple_store_book, mock_scrape_amazon_books, mock_checking_for_a_new_bestseller, mock_get_nyt_bestsellers, mock_get_nyt_book_categories, setup_db):
     year, month, day = 2023, 6, 26
     
     mock_get_nyt_book_categories.return_value = ["category1", "category2"]
@@ -133,6 +133,9 @@ def test_data_collection_success(mock_scrape_apple_store_book, mock_scrape_amazo
 
     # Ensure the directory exists.
     os.makedirs(RAW_DATA_ABS_PATH, exist_ok=True)
+
+    # Mock the file content as an empty JSON list
+    mock_open_file.return_value.read.return_value = "[]"
 
     data_collection(year, month, day, setup_db)
 
