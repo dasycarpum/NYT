@@ -58,6 +58,12 @@ pipeline {
                             pytest -vv --junitxml=/app/tests/test-results-data-ingestion.xml /app/tests/data_ingestion/
                     """
                     sh "cp ./tests/test-results-data-ingestion.xml ./test-results-data-ingestion.xml"
+
+                    sh """
+                        docker-compose -f ${composeFile} run --rm app \
+                            pytest -vv --junitxml=/app/tests/test-results-data-main.xml /app/tests/data_main/
+                    """
+                    sh "cp ./tests/test-results-data-main.xml ./test-results-data-main.xml"
                 }
             }
             post {
