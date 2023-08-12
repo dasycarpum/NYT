@@ -31,19 +31,20 @@ def load_book_into_database(file, engine, table):
     """
     # Read existing ids from the table
     with engine.connect() as connection:
-        result = connection.execute(f"SELECT id FROM {table}")
+        result = connection.execute(text(f"SELECT id FROM {table}"))
         existing_ids = [row[0] for row in result]
-
+        
     # Read data from JSON file
     with open(file, 'r', encoding='utf-8') as f:
         data_json = json.load(f)
-
+        
     # Check if id in the JSON data exists in the table
     if data_json['id'] not in existing_ids:
         # If it doesn't exist, insert the whole JSON object into the 'data' column
         id_value = data_json.pop('id')  # Remove 'id' from JSON and keep its value
         with engine.connect() as connection:
-            connection.execute(text(f"INSERT INTO {table} (id, data) VALUES (:id, :data)"), id=id_value, data=json.dumps(data_json))
+            connection.execute(text(f"INSERT INTO {table} (id, data) VALUES (:id, :data)"), {'id': id_value, 'data': json.dumps(data_json)})
+            connection.commit()
 
 
 def load_rank_into_database(file, engine, table):
@@ -61,12 +62,12 @@ def load_rank_into_database(file, engine, table):
         None
 
     """
-    # Read data from CSV file
-    data = pd.read_csv(file)
-
+     # Read data from CSV file
+    data = pd.read_csv(file) 
+    
     # Read existing data from the table
     existing_data = pd.read_sql(table, engine)
-
+    
     # Convert date column to datetime object in both dataframes for proper comparison
     data['date'] = pd.to_datetime(data['date'])
     existing_data['date'] = pd.to_datetime(existing_data['date'])
@@ -80,7 +81,7 @@ def load_rank_into_database(file, engine, table):
 
     # Drop the combined_key column as it's no longer needed
     data.drop(columns=['combined_key'], inplace=True)
-
+    
     # If there is any new data, append it to the table
     if len(data) > 0:
         data.to_sql(table, engine, if_exists='append', index=False)
@@ -103,7 +104,7 @@ def load_review_into_database(file, engine, table):
     """
      # Read data from CSV file
     data = pd.read_csv(file)
-
+    print("data 1 :", data.shape)
     # Read existing data from the table
     existing_data = pd.read_sql(table, engine)
 
@@ -121,10 +122,7 @@ def load_review_into_database(file, engine, table):
 
     # Drop the combined_key column as it's no longer needed
     data.drop(columns=['combined_key'], inplace=True)
-
+    print("data 2 :", data.shape)
     # If there is any new data, append it to the table
     if len(data) > 0:
         data.to_sql(table, engine, if_exists='append', index=False)
-
-
-

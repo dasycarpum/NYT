@@ -46,7 +46,7 @@ def save_to_file(data, filename, filetype='json'):
         elif filetype == 'csv':
             writer = csv.writer(file)
             writer.writerow(data[0])  # write the header
-            writer.writerows(data[1:])  # write the data rows
+            writer.writerows(data[1])  # write the data rows
         else:
             raise ValueError(f"Unknown filetype: {filetype}")
 

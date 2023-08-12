@@ -57,7 +57,7 @@ def test_save_to_file_csv_success():
     mock.assert_called_once_with('test.csv', 'w', newline='', encoding='utf-8')
     writer_mock.assert_called_once_with(mock())
     writer_mock.return_value.writerow.assert_called_once_with(data[0])
-    writer_mock.return_value.writerows.assert_called_once_with(data[1:])
+    writer_mock.return_value.writerows.assert_called_once_with(data[1])
 
 
 # This test checks that the save_to_file function raises a ValueError when given an unknown filetype. 
