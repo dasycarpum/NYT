@@ -1,0 +1,7 @@
+FROM postgres:13
+
+ENV POSTGRES_DB nyt
+ENV POSTGRES_USER postgres
+ENV POSTGRES_PASSWORD admin
+
+ADD data/dump/20230714.sql /docker-entrypoint-initdb.d/
