@@ -101,6 +101,30 @@ pipeline {
             }
         }
 
+        stage('Unit Tests for ML') {
+            steps {
+                script {
+                    def imageName = "nyt-app:ml"
+                    def composeFile = "docker-compose.ml.yml"
+
+                    sh "docker-compose -f ${composeFile} down -v"
+                    sh "docker rmi -f ${imageName} || true"
+                    sh "docker-compose -f ${composeFile} build app"
+                    
+                    sh """
+                        docker-compose -f ${composeFile} run --rm app \
+                            pytest -vv --junitxml=/app/tests/test-results-ml.xml /app/tests/machine_learning/
+                    """
+                    sh "cp ./tests/test-results-ml.xml ./test-results-ml.xml"
+                }
+            }
+            post {
+                always {
+                    junit '**/test-results-ml.xml'
+                }
+            }
+        }
+
         stage('Docker Build and Compose for ML') {
             steps {
                 script {
