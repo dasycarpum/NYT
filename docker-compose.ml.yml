@@ -1,0 +1,33 @@
+# Created on 2023-08-01
+
+# @author: Roland
+
+# @abstract: this Docker Compose file defines 2 services: a database
+# service using a custom PostgreSQL image and an application service, for 
+# machine learning, built from a local Dockerfile
+
+version: '3.8'
+services:
+  db:   # This is the database service
+    image: nyt-db  # image to be used for the 'db' service.
+    volumes:  # Mount local direct. as a vol. attached inside the 'db' container
+      - dbdata:/var/lib/postgresql/data 
+    ports: # Port 5432 of 'db' container ass. with port 5433 on host machine
+      - "5433:5432"  
+    environment:  # Used to create a new database at container startup
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: nyt
+
+  app:  # This is the application service
+    image: nyt-app:ml
+    build:
+      context: .  # Build context is the current directory
+      dockerfile: Dockerfile.ml  # Use this Dockerfile for building the image
+    volumes:
+      - .:/app  # Mount the application directory
+    depends_on:  # This service depends on db and firefox services
+      - db
+
+volumes:
+  dbdata:
