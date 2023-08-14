@@ -104,15 +104,15 @@ pipeline {
         stage('Unit Tests for ML') {
             steps {
                 script {
-                    def imageName = "nyt-app:ml"
-                    def composeFile = "docker-compose.ml.yml"
+                    def imageName = "nyt-app:ml-test"
+                    def composeFile = "docker-compose.yml"
 
                     sh "docker-compose -f ${composeFile} down -v"
                     sh "docker rmi -f ${imageName} || true"
                     sh "docker-compose -f ${composeFile} build app"
-                    
+        
                     sh """
-                        docker-compose -f ${composeFile} run --rm app \
+                        docker-compose -f docker-compose.ml.yml run --rm app \
                             pytest -vv --junitxml=/app/tests/test-results-ml.xml /app/tests/machine_learning/
                     """
                     sh "cp ./tests/test-results-ml.xml ./test-results-ml.xml"
@@ -142,4 +142,3 @@ pipeline {
         }
     }
 }
-
