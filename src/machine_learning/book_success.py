@@ -8,6 +8,8 @@ Created on 2023-06-17
 @abstract: use an ML model to predict the success of a book based on certain parameters such as genre, author, price, and initial reviews. This can help publishers and authors understand which elements might contribute more towards a book's success.
 """
 
+import re
+import numpy as np
 import pandas as pd
 
 # SQL query
@@ -81,3 +83,88 @@ def sql_query_to_create_dataset(engine):
     
     return df
 
+# Data cleaning
+# ==============
+
+def dataset_cleaning(df):
+    """
+    Cleans the given pandas DataFrame in several ways including replacing 
+    empty strings with NaN, removing rows with missing data in key 
+    columns, extracting maximum prices from price lists, handling 
+    punctuation in rating data, replacing missing genre data with the 
+    mode, changing the data type of various columns, removing duplicates, 
+    and dropping unnecessary columns.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to clean. It's expected to 
+        contain the following columns:
+            - rating
+            - number_of_stars
+            - reviews_count
+            - price
+            - genre
+            - dagger
+            - number_of_pages
+            - mean_first_stars
+            - max_weeks
+            - id
+            - title
+
+    Returns:
+        df (pd.DataFrame): A clean version of the input DataFrame. It 
+        includes a new 'max_price' column and no longer includes the 
+        'id', 'title', and 'price' columns.
+
+    Raises:
+        ValueError: If the DataFrame doesn't contain the expected columns.
+        TypeError: If the argument provided is not a pandas DataFrame.
+    
+    """
+    # Replace blank by NaN
+    df[df.select_dtypes(include=['object']).columns] = df.select_dtypes(include=['object']).replace('', np.nan)
+
+    # Remove rows with concomitant NaN in 3 columns
+    df = df.dropna(axis=0, how='all',                
+                subset=['rating', 'number_of_stars', 'reviews_count']) 
+
+    # Define a function to extract the maximum price from a list
+    def extract_max_price(price_list):
+        pattern = r'\d+\.\d+'
+        matches = re.findall(pattern, price_list)
+        numbers = [float(value) for value in matches]
+        return max(numbers)
+
+    # Apply the function to the 'price' column
+    df['max_price'] = df['price'].apply(extract_max_price)
+
+    # Replace comma in 'rating' column
+    df['rating'] = df['rating'].replace(',', '', regex=True)
+
+    # Replace NaN with the mode in the 'genre' column
+    df['genre'].fillna(df['genre'].mode()[0], inplace = True)
+
+    # Typing of numeric columns
+    df.fillna(value={'dagger': False, 
+                    'rating': 0, 
+                    'number_of_stars': 0.0, 
+                    'number_of_pages': 0, 
+                    'reviews_count': 0,
+                    'mean_first_stars' : 0.0}, inplace=True)
+
+    df = df.astype({'dagger': 'bool', 
+                    'rating' : 'int', 
+                    'number_of_stars' : 'float', 
+                    'number_of_pages' : 'int', 
+                    'reviews_count' : 'int',
+                    'mean_first_stars' : 'float'})
+
+    # Deleting title-author duplicates
+    df.sort_values(by='max_weeks', ascending=False, inplace=True)
+    df.drop_duplicates(subset=['title','author'],
+                    keep='first',
+                    inplace=True)
+
+    # Removing unnecessary columns
+    df = df.drop(columns=['id', 'title', 'price'])
+
+    return df

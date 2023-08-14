@@ -22,7 +22,7 @@ src_dir = os.path.join(current_script_dir, '../..')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
 from config import DB_ENGINE
-from src.machine_learning.book_success import sql_query_to_create_dataset
+from src.machine_learning.book_success import sql_query_to_create_dataset, dataset_cleaning
 
   
 
@@ -31,9 +31,12 @@ def main():
     # Create a SQLAlchemy engine that will interface with the database.
     engine = create_engine(DB_ENGINE)
 
-    df = sql_query_to_create_dataset(engine)
+    df_raw = sql_query_to_create_dataset(engine)
+    print("Raw DataFrame :", df_raw.shape, '\n', df_raw.dtypes)
 
-    print("Dataframe :", df.shape)
+    df_cleaned =  dataset_cleaning(df_raw)
+    print("cleaned DataFrame :", df_cleaned.shape, '\n', df_cleaned.dtypes)
+
 
 if __name__ == "__main__":
     main()
