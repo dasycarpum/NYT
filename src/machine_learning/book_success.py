@@ -12,6 +12,10 @@ import re
 import numpy as np
 import pandas as pd
 
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+
+
 # SQL query
 # =========
 def sql_query_to_create_dataset(engine):
@@ -166,5 +170,37 @@ def dataset_cleaning(df):
 
     # Removing unnecessary columns
     df = df.drop(columns=['id', 'title', 'price'])
+
+    return df
+
+
+# Creation of a single target
+# ===========================
+
+def target_combination(df):
+    """
+    Combines the 'best_ranking' and 'max_weeks' features from a DataFrame into a single feature using StandardScaler and PCA. This function will add a new column 'combined_target' to the dataframe which represents the combined 
+    feature.
+
+    Args:
+        df (pandas.DataFrame): DataFrame which includes at least 'best_ranking' and 'max_weeks' columns.
+
+    Returns:
+        df (pandas.DataFrame): DataFrame with an additional 'combined_target' column which is a combination of 'best_ranking' and 'max_weeks', standardized and reduced to one dimension using PCA.
+
+    Raises:
+        KeyError: If either 'best_ranking' or 'max_weeks' does not exist in the DataFrame.
+        ValueError: If PCA fit fails.
+
+    """
+    # Standardize the features
+    scaler = StandardScaler()
+    targets_scaled = scaler.fit_transform(df[['best_ranking', 'max_weeks']])
+
+    # Apply PCA
+    pca = PCA(n_components=1)
+    targets_pca = pca.fit_transform(targets_scaled)
+
+    df['combined_target'] = targets_pca
 
     return df

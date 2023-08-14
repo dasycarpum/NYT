@@ -22,7 +22,7 @@ src_dir = os.path.join(current_script_dir, '../..')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
 from config import DB_ENGINE
-from src.machine_learning.book_success import sql_query_to_create_dataset, dataset_cleaning
+from src.machine_learning.book_success import sql_query_to_create_dataset, dataset_cleaning, target_combination
 
   
 
@@ -36,6 +36,10 @@ def main():
 
     df_cleaned =  dataset_cleaning(df_raw)
     print("cleaned DataFrame :", df_cleaned.shape, '\n', df_cleaned.dtypes)
+
+    df_complete = target_combination(df_cleaned)
+    print("complete DataFrame :", df_cleaned.shape, '\n', df_cleaned.dtypes)
+
 
 
 if __name__ == "__main__":
