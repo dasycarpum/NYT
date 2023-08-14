@@ -15,6 +15,8 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # SQL query
 # =========
@@ -204,3 +206,48 @@ def target_combination(df):
     df['combined_target'] = targets_pca
 
     return df
+
+
+# Relationships visualization between targets and feature variables
+# ==================================================================
+
+def variable_preview(df):
+    """
+    Creates visualizations to preview the relationship between different variables in a DataFrame. Three kinds of plots are created:
+    1. PairGrid scatter plot, hexbin plot and histogram for the selected numerical variables.
+    2. Correlation Heatmap for all numeric variables.
+    3. Box plot for target vs categorical variable ('genre').
+
+    Args:
+        df (pandas.DataFrame): DataFrame that contains the variables to be plotted.
+
+    Raises:
+        KeyError: If the DataFrame does not contain one of the required columns.
+    
+    """
+    # Define the columns
+    cols = ['combined_target', 'best_ranking', 'max_weeks', 'rating', 'number_of_stars', 'number_of_pages', 'reviews_count', 'mean_first_stars', 'max_price']
+
+    # Create a PairGrid instance
+    g = sns.PairGrid(df[cols])
+    g.map_lower(sns.scatterplot, s=15)
+    g.map_upper(plt.hexbin, gridsize=20, cmap='viridis')
+    g.map_diag(sns.histplot)
+
+    # Correlation heatmap between numeric variables
+    numeric_df = df.select_dtypes(include=['float64', 'int64'])
+    correlation_matrix = numeric_df.corr()
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
+    plt.title('Correlation Heatmap')
+
+    # Box plot with categorical variable
+    plt.figure(figsize=(10, 6))
+    box_plot = sns.boxplot(x='genre', y='combined_target', data=df)
+    plt.xlabel('Genre')
+    plt.ylabel('Best book')
+    plt.title('Best book by Genre')
+    box_plot.set_xticklabels(box_plot.get_xticklabels(), rotation=45)
+
+    # reviews_count and rating -> good correlation with targets, but also between them -> only reviews_count
+    # number_of_stars and mean_first_stars -> no-linear correlation with target, but linear correlation between them -> only number_of_stars
