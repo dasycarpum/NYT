@@ -13,6 +13,7 @@ Created on 2023-08-13
 import os
 import sys
 import pytest
+import numpy as np
 import pandas as pd
 from unittest.mock import MagicMock
 from sqlalchemy.engine import Engine
@@ -25,7 +26,7 @@ current_script_dir = os.path.dirname(current_script_path)
 src_dir = os.path.join(current_script_dir, '../..', 'src', 'machine_learning')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
-from book_success import sql_query_to_create_dataset
+from book_success import sql_query_to_create_dataset, dataset_cleaning
 
 
 def test_sql_query_to_create_dataset_valid_output(mocker):
@@ -72,5 +73,96 @@ def test_sql_query_to_create_dataset_empty_output(mocker):
     
     # Assert
     assert result_df.empty
+
+
+# Sample Data
+sample_data = {
+    'rating': [',45', '45,', '67'],
+    'number_of_stars': [np.nan, '4', '5'],
+    'reviews_count': [np.nan, '23', '45'],
+    'price': ['$12.45, $15.89', '$10.50', '$5.67'],
+    'genre': ['thriller', np.nan, 'fiction'],
+    'dagger': [True, np.nan, True],
+    'asterisk': [0, np.nan, 1],
+    'number_of_pages': [np.nan, 300, 200],
+    'mean_first_stars': ['3.5', '4.0', np.nan],
+    'max_weeks': [12, 15, 20],
+    'best_ranking':[1, 11, 24], 
+    'id': [1, 2, 3],
+    'title': ['Book1', 'Book2', 'Book3'],
+    'author': ['Author1', 'Author1', 'Author3']
+}
+
+@pytest.fixture
+def sample_dataframe():
+    return pd.DataFrame(sample_data)
+
+
+def test_dataset_cleaning_structure(sample_dataframe):
+    df = dataset_cleaning(sample_dataframe.copy())
+    
+    # Expected columns after cleaning
+    expected_columns = ['rating', 'number_of_stars', 'reviews_count', 'genre', 'dagger', 'asterisk', 'number_of_pages', 'mean_first_stars', 'max_weeks', 'best_ranking', 'author', 'max_price']
+    assert list(df.columns) == expected_columns
+
+
+def test_dataset_cleaning_replace_empty_with_nan(sample_dataframe):
+    df = sample_dataframe.copy()
+    
+    # Set genre at index 0 to an empty string
+    df['genre'].iloc[0] = ''
+    
+    # Clean the dataframe
+    cleaned_df = dataset_cleaning(df)
+    
+    # Check if the value at index 0 is now the mode
+    mode_genre = sample_dataframe['genre'].mode()[0]
+    assert cleaned_df['genre'].iloc[0] == mode_genre
+
+
+def test_dataset_cleaning_remove_rows_with_nan(sample_dataframe):
+    df = sample_dataframe.copy()
+    df['rating'].iloc[0] = np.nan
+    df['number_of_stars'].iloc[0] = np.nan
+    df['reviews_count'].iloc[0] = np.nan
+    cleaned_df = dataset_cleaning(df)
+    assert len(cleaned_df) == len(df) - 1
+
+
+def test_dataset_cleaning_max_price(sample_dataframe):
+    df = dataset_cleaning(sample_dataframe.copy())
+    assert df['max_price'].iloc[0] == 5.67
+
+
+def test_dataset_cleaning_rating_replace_comma(sample_dataframe):
+    df = dataset_cleaning(sample_dataframe.copy())
+    assert df['rating'].iloc[0] == 67
+
+
+def test_dataset_cleaning_genre_fillna_mode(sample_dataframe):
+    df = dataset_cleaning(sample_dataframe.copy())
+    mode_genre = sample_dataframe['genre'].mode()[0]
+    assert df['genre'].iloc[1] == mode_genre
+
+
+def test_dataset_cleaning_data_types(sample_dataframe):
+    df = dataset_cleaning(sample_dataframe.copy())
+    assert df['dagger'].dtype == 'bool'
+    assert df['rating'].dtype == 'int'
+    assert df['genre'].dtype == 'object'
+    assert df['author'].dtype == 'object'
+    assert df['number_of_stars'].dtype == 'float'
+    assert df['number_of_pages'].dtype == 'int'
+    assert df['reviews_count'].dtype == 'int'
+    assert df['mean_first_stars'].dtype == 'float'
+    assert df['best_ranking'].dtype == 'int'
+    assert df['max_weeks'].dtype == 'int'
+
+
+def test_dataset_cleaning_unnecessary_columns(sample_dataframe):
+    df = dataset_cleaning(sample_dataframe.copy())
+    assert 'id' not in df.columns
+    assert 'title' not in df.columns
+    assert 'price' not in df.columns
 
 
