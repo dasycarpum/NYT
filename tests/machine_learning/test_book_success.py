@@ -7,7 +7,10 @@ Created on 2023-08-13
 
 @abstract: create for the 'book_success.py' source file,
     2 unit tests for the 'sql_query_to_create_dataset' function
-    y unit tests for the '' function
+    8 unit tests for the 'dataset_cleaning' function
+    3 unit tests for the 'target_combination' function
+    1 unit tests for the 'variable_preview' function
+
 """
 
 import os
@@ -19,6 +22,8 @@ from unittest.mock import MagicMock
 from sqlalchemy.engine import Engine
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # Getting the absolute path of the current script file
 current_script_path = os.path.abspath(__file__)
@@ -28,7 +33,7 @@ current_script_dir = os.path.dirname(current_script_path)
 src_dir = os.path.join(current_script_dir, '../..', 'src', 'machine_learning')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
-from book_success import sql_query_to_create_dataset, dataset_cleaning, target_combination
+from book_success import sql_query_to_create_dataset, dataset_cleaning, target_combination, variable_preview
 
 
 def test_sql_query_to_create_dataset_valid_output(mocker):
@@ -176,7 +181,7 @@ def test_combined_target_column():
     df_transformed = target_combination(df)
     assert 'combined_target' in df_transformed.columns
 
-def test_keyerror_for_missing_columns():
+def test_keyerror_for_missing_target_columns():
     df1 = pd.DataFrame({'best_ranking': [1, 2, 3, 4]})
     with pytest.raises(KeyError):
         target_combination(df1)
@@ -200,3 +205,26 @@ def test_value_transformation():
     df_transformed = target_combination(df)
     
     np.testing.assert_array_almost_equal(df_transformed['combined_target'].values, targets_pca.ravel())
+
+
+def test_plots_creation():
+    # Create a dataframe with all necessary columns
+    df = pd.DataFrame({
+        'combined_target': np.random.randn(10),
+        'best_ranking': np.random.randn(10),
+        'max_weeks': np.random.randn(10),
+        'rating': np.random.randn(10),
+        'number_of_stars': np.random.randn(10),
+        'number_of_pages': np.random.randn(10),
+        'reviews_count': np.random.randn(10),
+        'mean_first_stars': np.random.randn(10),
+        'max_price': np.random.randn(10),
+        'genre': ['Sci-Fi', 'Drama', 'Romance', 'Horror', 'Mystery', 'Action', 'Thriller', 'Fantasy', 'Adventure', 'Comedy']
+    })
+
+    try:
+        variable_preview(df)
+        assert True
+    except Exception as e:
+        pytest.fail(f"Plot creation failed with error: {e}")
+
