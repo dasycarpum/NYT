@@ -26,7 +26,7 @@ src_dir = os.path.join(current_script_dir, '../..')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
 from config import DB_ENGINE
-from src.machine_learning.book_success import sql_query_to_create_dataset, dataset_cleaning, target_combination, create_3D_scatter, create_heatmap, create_box_plot
+from src.machine_learning.book_success import sql_query_to_create_dataset, dataset_cleaning, target_combination, create_3D_scatter, create_heatmap, create_box_plot, preprocessing
 
 
 
@@ -42,7 +42,9 @@ def main():
     var_3D_scatter_fig = create_3D_scatter(df_complete)
     var_heatmap_fig = create_heatmap(df_complete)
     var_box_plot_fig = create_box_plot(df_complete)
-    
+
+    columns, X_train, X_test, y_train, y_test = preprocessing(df_complete)
+
     app = dash.Dash(__name__)
     app.layout = html.Div([
         dcc.Tabs(id='tabs-example', value='tab-1', children=[

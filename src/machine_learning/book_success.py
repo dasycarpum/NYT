@@ -13,13 +13,13 @@ import numpy as np
 import pandas as pd
 
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.model_selection import train_test_split
 
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
 
 # SQL query
@@ -160,7 +160,7 @@ def dataset_cleaning(df):
                     'reviews_count': 0,
                     'mean_first_stars' : 0.0}, inplace=True)
 
-    df = df.astype({'dagger': 'int', 
+    df = df.astype({'dagger': 'int',
                     'rating' : 'int', 
                     'number_of_stars' : 'float', 
                     'number_of_pages' : 'int', 
@@ -308,3 +308,58 @@ def create_box_plot(df):
     plotly_fig.update_layout(title='Sales Ranking by Genre', xaxis_title='Genre', yaxis_title='Sales Ranking')
     
     return plotly_fig
+
+
+# Preprocessing
+# =============
+def preprocessing(df):
+    """
+    Performs pre-processing on a pandas DataFrame to prepare it for a 
+    machine learning model. It combines one-hot encodes the 'genre' column, splits the DataFrame into training and test sets, and scales the resulting 
+    features.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to process. It's expected to 
+        contain the following columns:
+            - genre
+            - dagger
+            - number_of_stars
+            - reviews_count
+            - combined_target
+
+    Returns:
+        X_train columns (list[str]) : the header of each column
+        X_train_scaled (np.ndarray): The scaled features for the training set.
+        X_test_scaled (np.ndarray): The scaled features for the test set.
+        y_train (pd.Series): The target variable for the training set.
+        y_test (pd.Series): The target variable for the test set.
+
+    Raises:
+        ValueError: If the DataFrame doesn't contain the expected columns.
+        TypeError: If the argument provided is not a pandas DataFrame.
+    
+    """
+    features = df[['reviews_count', 'number_of_stars', 'dagger', 'genre']]
+    target = df['combined_target']
+
+    X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
+
+    # One-hot encode the categorical features
+    encod = OneHotEncoder( drop="first", sparse=False)    
+    categ = ['genre']
+
+    transformed_data_train = encod.fit_transform(X_train[categ])
+    transformed_df_train = pd.DataFrame(transformed_data_train, columns=encod.get_feature_names_out(categ), index=X_train.index)
+    X_train = pd.concat([X_train.drop(categ, axis=1), transformed_df_train], axis=1)
+
+    transformed_data_test = encod.transform(X_test[categ])
+    transformed_df_test = pd.DataFrame(transformed_data_test, columns=encod.get_feature_names_out(categ), index=X_test.index)
+    X_test = pd.concat([X_test.drop(categ, axis=1), transformed_df_test], axis=1)
+
+    # Scale the features
+    scaler = StandardScaler()                     
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+
+    return X_train.columns, X_train_scaled, X_test_scaled, y_train, y_test
+
