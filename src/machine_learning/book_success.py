@@ -339,6 +339,16 @@ def preprocessing(df):
         TypeError: If the argument provided is not a pandas DataFrame.
     
     """
+    # Check if the input is a pandas DataFrame
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("Input should be a pandas DataFrame")
+
+    # Check for the expected columns explicitly
+    expected_columns = ['genre', 'dagger', 'number_of_stars', 'reviews_count', 'combined_target']
+    if not set(expected_columns).issubset(df.columns):
+        missing_columns = set(expected_columns) - set(df.columns)
+        raise ValueError(f"The DataFrame is missing the following columns: {', '.join(missing_columns)}")
+
     features = df[['reviews_count', 'number_of_stars', 'dagger', 'genre']]
     target = df['combined_target']
 

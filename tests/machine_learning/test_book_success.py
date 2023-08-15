@@ -9,6 +9,8 @@ Created on 2023-08-13
     2 unit tests for the 'sql_query_to_create_dataset' function
     8 unit tests for the 'dataset_cleaning' function
     3 unit tests for the 'target_combination' function
+    9 unit tests for the variable previews (3 functions)
+    5 unit tests for the 'preprocessing' function
 
 """
 
@@ -17,12 +19,10 @@ import sys
 import pytest
 import numpy as np
 import pandas as pd
-from unittest.mock import MagicMock
 from sqlalchemy.engine import Engine
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import plotly.graph_objs as go
-import plotly.express as px
 
 # Getting the absolute path of the current script file
 current_script_path = os.path.abspath(__file__)
@@ -32,7 +32,7 @@ current_script_dir = os.path.dirname(current_script_path)
 src_dir = os.path.join(current_script_dir, '../..', 'src', 'machine_learning')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
-from book_success import sql_query_to_create_dataset, dataset_cleaning, target_combination, create_heatmap, create_3D_scatter, create_box_plot
+from book_success import sql_query_to_create_dataset, dataset_cleaning, target_combination, create_heatmap, create_3D_scatter, create_box_plot, preprocessing
 
 
 def test_sql_query_to_create_dataset_valid_output(mocker):
@@ -318,3 +318,75 @@ def test_box_plot_data_matches_dataframe():
         genre = trace.name
         expected_data = df[df['genre'] == genre]['combined_target'].values
         assert np.array_equal(trace['y'], expected_data), f"Data mismatch for genre {genre}"
+
+
+def test_missing_columns_raises_error():
+    df = pd.DataFrame({
+        'genre': ['Sci-Fi', 'Fantasy'],
+        'dagger': [1, 0],
+        'number_of_stars': [4, 5],
+        'reviews_count': [100, 50]
+        # 'combined_target' column is missing
+    })
+    
+    with pytest.raises(ValueError, match="The DataFrame is missing the following columns: combined_target"):
+        preprocessing(df)
+
+
+def test_non_dataframe_input_raises_error():
+    data = [
+        ('Sci-Fi', 1, 4, 100, 150),
+        ('Romance', 0, 5, 50, 100)
+    ]
+
+    with pytest.raises(TypeError):
+        preprocessing(data)
+
+
+def test_output_shapes_match_expected():
+    df = pd.DataFrame({
+        'genre': ['Sci-Fi', 'Romance', 'Romance', 'Thriller'],
+        'dagger': [1, 0, 1, 0],
+        'number_of_stars': [4, 5, 4, 3],
+        'reviews_count': [100, 50, 60, 120],
+        'combined_target': [150, 100, 110, 140]
+    })
+    
+    columns, X_train_scaled, X_test_scaled, y_train, y_test = preprocessing(df)
+    
+    assert X_train_scaled.shape[0] == y_train.shape[0], "Training data and labels size mismatch"
+    assert X_test_scaled.shape[0] == y_test.shape[0], "Test data and labels size mismatch"
+
+
+def test_encoded_columns_match():
+    df = pd.DataFrame({
+        'genre': ['Sci-Fi', 'Sci-Fi', 'Romance', 'Thriller'],
+        'dagger': [1, 0, 1, 0],
+        'number_of_stars': [4, 5, 4, 3],
+        'reviews_count': [100, 50, 60, 120],
+        'combined_target': [150, 100, 110, 140]
+    })
+    
+    columns, _, _, _, _ = preprocessing(df)
+    
+    # Check if the 'genre' column has been one-hot encoded
+    assert 'genre_Sci-Fi' in columns
+    assert 'genre_Thriller' in columns
+    assert 'genre_Thriller' in columns
+
+
+def test_scaling():
+    df = pd.DataFrame({
+        'genre': ['Sci-Fi', 'Romance', 'Romance', 'Thriller'],
+        'dagger': [1, 0, 1, 0],
+        'number_of_stars': [4, 5, 4, 3],
+        'reviews_count': [100, 50, 60, 120],
+        'combined_target': [150, 100, 110, 140]
+    })
+    
+    columns, X_train_scaled, _, _, _ = preprocessing(df)
+    
+    # Check if mean is approximately 0 and standard deviation is approximately 1 for scaled training data
+    assert np.isclose(X_train_scaled.mean(axis=0), 0).all(), "Means are not close to 0"
+    assert np.isclose(X_train_scaled.std(axis=0), 1).all(), "Standard deviations are not close to 1"
+
