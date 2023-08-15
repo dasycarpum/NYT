@@ -153,7 +153,8 @@ def dataset_cleaning(df):
     df['genre'].fillna(df['genre'].mode()[0], inplace = True)
 
     # Typing of numeric columns
-    df.fillna(value={'rating': 0, 
+    df.fillna(value={'dagger':0,
+                    'rating': 0, 
                     'number_of_stars': 0.0, 
                     'number_of_pages': 0, 
                     'reviews_count': 0,

@@ -21,6 +21,8 @@ from unittest.mock import MagicMock
 from sqlalchemy.engine import Engine
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+import plotly.graph_objs as go
+import plotly.express as px
 
 # Getting the absolute path of the current script file
 current_script_path = os.path.abspath(__file__)
@@ -30,7 +32,7 @@ current_script_dir = os.path.dirname(current_script_path)
 src_dir = os.path.join(current_script_dir, '../..', 'src', 'machine_learning')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
-from book_success import sql_query_to_create_dataset, dataset_cleaning, target_combination
+from book_success import sql_query_to_create_dataset, dataset_cleaning, target_combination, create_heatmap, create_3D_scatter, create_box_plot
 
 
 def test_sql_query_to_create_dataset_valid_output(mocker):
@@ -204,3 +206,115 @@ def test_value_transformation():
     np.testing.assert_array_almost_equal(df_transformed['combined_target'].values, targets_pca.ravel())
 
 
+def test_return_type_of_create_heatmap():
+    # Test data
+    df = pd.DataFrame({
+        'combined_target': np.random.randn(10),
+        'rating': np.random.randn(10),
+        'number_of_stars': np.random.randn(10),
+        'number_of_pages': np.random.randn(10),
+        'reviews_count': np.random.randn(10),
+        'mean_first_stars': np.random.randn(10),
+        'max_price': np.random.randn(10)
+    })
+    result = create_heatmap(df)
+    assert isinstance(result, go._figure.Figure), "Expected output type is plotly.graph_objs._figure.Figure"
+
+def test_keyerror_for_missing_columns():
+    # Missing 'rating' column
+    df = pd.DataFrame({
+        'combined_target': np.random.randn(10),
+        'number_of_stars': np.random.randn(10),
+        'number_of_pages': np.random.randn(10),
+        'reviews_count': np.random.randn(10),
+        'mean_first_stars': np.random.randn(10),
+        'max_price': np.random.randn(10)
+    })
+    with pytest.raises(KeyError):
+        create_heatmap(df)
+
+cols = ['combined_target', 'rating', 'number_of_stars', 'number_of_pages', 'reviews_count', 'mean_first_stars', 'max_price']
+
+def test_heatmap_values_correspond_to_correlation_coefficients():
+    # Test data with known correlations
+    df = pd.DataFrame({
+        'combined_target': np.array([1, 2, 3, 4, 5]),
+        'rating': np.array([5, 4, 3, 2, 1]),
+        'number_of_stars': np.array([1, 2, 3, 4, 5]),
+        'number_of_pages': np.array([2, 4, 6, 8, 10]),
+        'reviews_count': np.array([10, 9, 8, 7, 6]),
+        'mean_first_stars': np.array([1, 1.5, 2, 2.5, 3]),
+        'max_price': np.array([5, 10, 15, 20, 25])
+    })
+    result = create_heatmap(df)
+    correlation_matrix = df[cols].corr()
+    # Assert that the heatmap values correspond to the correlation matrix
+    assert np.array_equal(result.data[0]['z'], correlation_matrix.values), "Heatmap values don't match correlation coefficients"
+
+
+def test_return_type_of_create_3D_scatter():
+    # Test data
+    df = pd.DataFrame({
+        'reviews_count': np.random.randn(10),
+        'rating': np.random.randn(10),
+        'combined_target': np.random.randn(10),
+        'dagger': np.random.choice(['yes', 'no'], size=10)
+    })
+    result = create_3D_scatter(df)
+    assert isinstance(result, go._figure.Figure), "Expected output type is plotly.graph_objs._figure.Figure"
+
+def test_valueerror_for_missing_columns():
+    # Missing 'rating' column
+    df = pd.DataFrame({
+        'reviews_count': np.random.randn(10),
+        'combined_target': np.random.randn(10),
+        'dagger': np.random.choice(['yes', 'no'], size=10)
+    })
+    with pytest.raises(ValueError):
+        create_3D_scatter(df)
+
+def test_scatter_values_correspond_to_dataframe():
+    # Test data with known values
+    df = pd.DataFrame({
+        'reviews_count': np.array([1, 2, 3, 4, 5]),
+        'rating': np.array([5, 4, 3, 2, 1]),
+        'combined_target': np.array([10, 20, 30, 40, 50]),
+        'dagger': [1, 0, 1, 0, 1]
+    })
+    result = create_3D_scatter(df)
+    # Assert that scatter plot values correspond to DataFrame columns
+    assert np.array_equal(result.data[0]['x'], df['reviews_count'].values), "x values don't match 'reviews_count' column"
+    assert np.array_equal(result.data[0]['y'], df['rating'].values), "y values don't match 'rating' column"
+    assert np.array_equal(result.data[0]['z'], df['combined_target'].values), "z values don't match 'combined_target' column"
+
+
+def test_returns_plotly_figure():
+    df = pd.DataFrame({
+        'genre': ['Sci-Fi', 'Fantasy', 'Romance'],
+        'combined_target': [100, 200, 150]
+    })
+    
+    result = create_box_plot(df)
+    assert str(type(result)) == "<class 'plotly.graph_objs._figure.Figure'>", f"Expected Plotly Figure, got {type(result)}"
+
+def test_correct_number_of_box_plots():
+    df = pd.DataFrame({
+        'genre': ['Sci-Fi', 'Fantasy', 'Sci-Fi', 'Romance', 'Fantasy'],
+        'combined_target': [100, 200, 110, 150, 210]
+    })
+    
+    result = create_box_plot(df)
+    assert len(result.data) == len(df['genre'].unique()), "Number of box plots doesn't match number of unique genres"
+
+def test_box_plot_data_matches_dataframe():
+    df = pd.DataFrame({
+        'genre': ['Sci-Fi', 'Fantasy', 'Sci-Fi', 'Romance', 'Fantasy'],
+        'combined_target': [100, 200, 110, 150, 210]
+    })
+    
+    result = create_box_plot(df)
+    
+    for trace in result.data:
+        genre = trace.name
+        expected_data = df[df['genre'] == genre]['combined_target'].values
+        assert np.array_equal(trace['y'], expected_data), f"Data mismatch for genre {genre}"
