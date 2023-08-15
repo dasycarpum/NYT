@@ -17,6 +17,10 @@ from sklearn.preprocessing import StandardScaler
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
 
 # SQL query
 # =========
@@ -86,7 +90,6 @@ def sql_query_to_create_dataset(engine):
 
     # Create the DataFrame
     df = pd.read_sql_query(query, con=engine)
-    
     return df
 
 # Data cleaning
@@ -150,14 +153,13 @@ def dataset_cleaning(df):
     df['genre'].fillna(df['genre'].mode()[0], inplace = True)
 
     # Typing of numeric columns
-    df.fillna(value={'dagger': False, 
-                    'rating': 0, 
+    df.fillna(value={'rating': 0, 
                     'number_of_stars': 0.0, 
                     'number_of_pages': 0, 
                     'reviews_count': 0,
                     'mean_first_stars' : 0.0}, inplace=True)
 
-    df = df.astype({'dagger': 'bool', 
+    df = df.astype({'dagger': 'int', 
                     'rating' : 'int', 
                     'number_of_stars' : 'float', 
                     'number_of_pages' : 'int', 
@@ -172,7 +174,7 @@ def dataset_cleaning(df):
 
     # Removing unnecessary columns
     df = df.drop(columns=['id', 'title', 'price'])
-
+    
     return df
 
 
@@ -208,46 +210,100 @@ def target_combination(df):
     return df
 
 
-# Relationships visualization between targets and feature variables
+# Relationships visualization between target and feature variables
 # ==================================================================
 
-def variable_preview(df):
+cols = ['combined_target', 'rating', 'number_of_stars', 'number_of_pages', 'reviews_count', 'mean_first_stars', 'max_price']
+    
+def create_heatmap(df):
     """
-    Creates visualizations to preview the relationship between different variables in a DataFrame. Three kinds of plots are created:
-    1. PairGrid scatter plot, hexbin plot and histogram for the selected numerical variables.
-    2. Correlation Heatmap for all numeric variables.
-    3. Box plot for target vs categorical variable ('genre').
+    Create a correlation heatmap for numeric columns of a DataFrame.
+
+    This function takes a DataFrame, extracts its numeric columns, and then
+    calculates the correlation matrix for these columns. It then visualizes
+    this correlation matrix as a heatmap using Plotly's graph_objects.
 
     Args:
-        df (pandas.DataFrame): DataFrame that contains the variables to be plotted.
+        df (pd.DataFrame): Input DataFrame for which the correlation heatmap
+            is to be generated.
 
-    Raises:
-        KeyError: If the DataFrame does not contain one of the required columns.
+    Returns:
+        plotly.graph_objs._figure.Figure: A plotly Figure object visualizing 
+            the correlation heatmap.
     
     """
-    # Define the columns
-    cols = ['combined_target', 'best_ranking', 'max_weeks', 'rating', 'number_of_stars', 'number_of_pages', 'reviews_count', 'mean_first_stars', 'max_price']
-
-    # Create a PairGrid instance
-    g = sns.PairGrid(df[cols])
-    g.map_lower(sns.scatterplot, s=15)
-    g.map_upper(plt.hexbin, gridsize=20, cmap='viridis')
-    g.map_diag(sns.histplot)
-
     # Correlation heatmap between numeric variables
-    numeric_df = df.select_dtypes(include=['float64', 'int64'])
+    numeric_df = df[cols]
     correlation_matrix = numeric_df.corr()
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
-    plt.title('Correlation Heatmap')
+    
+    # Creating a heatmap using Plotly's graph_objects
+    heatmap_fig = go.Figure(data=go.Heatmap(
+        z=correlation_matrix.values,
+        x=correlation_matrix.columns,
+        y=correlation_matrix.columns,
+        colorscale='rdbu', 
+        zmin=-1,  # because correlation coefficients range from -1 to 1
+        zmax=1,
+        colorbar=dict(title='Correlation Coefficient'),
+        hoverinfo='z'
+    ))
+    
+    heatmap_fig.update_layout(
+        title='Correlation Heatmap',
+        xaxis=dict(tickangle=-45),
+    )
+    
+    return heatmap_fig
 
-    # Box plot with categorical variable
+
+def create_3D_scatter(df):
+    """
+    Create a 3D scatter plot visualizing reviews, rating, and sales ranking.
+
+    This function uses Plotly Express to generate a 3D scatter plot. The x, y, and z dimensions of the scatter plot represent the 'reviews_count', rating', and 'combined_target' columns of the input DataFrame respectively. Additionally, the color of each point is determined by the 'dagger' column of the DataFrame.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame containing the columns 'reviews_count', 'rating', 'combined_target', and 'dagger'.
+
+    Returns:
+        plotly.graph_objs._figure.Figure: A plotly Figure object visualizing the 3D scatter plot.
+
+    """
+    fig = px.scatter_3d(df, x="reviews_count", y="rating", z="combined_target",
+                    color="dagger", opacity=0.7)
+    
+    fig.update_layout(title_text="3D Scatter Plot of Reviews, Rating, and Sales Ranking")
+    
+    return fig
+
+
+def create_box_plot(df):
+    """
+    Create a box plot visualizing the distribution of sales ranking by genre.
+
+    This function utilizes Seaborn to plot a box plot of the 'combined_target' column grouped by the 'genre' column from the input DataFrame. The resulting Seaborn plot is then converted to a Plotly figure to be returned.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame containing the columns 'genre' and 'combined_target'.
+
+    Returns:
+        plotly.graph_objs._figure.Figure: A plotly Figure object visualizing the box plot.
+
+    Note:
+        This function both creates a Seaborn plot and returns a Plotly figure. However, only the Plotly figure
+        is returned; the Seaborn plot will be displayed when this function is called if using a Jupyter environment 
+        or another plotting backend that displays plots automatically.
+    
+    """
+    # Using seaborn to create the box plot
     plt.figure(figsize=(10, 6))
     box_plot = sns.boxplot(x='genre', y='combined_target', data=df)
-    plt.xlabel('Genre')
-    plt.ylabel('Best book')
-    plt.title('Best book by Genre')
     box_plot.set_xticklabels(box_plot.get_xticklabels(), rotation=45)
+    
+    # Convert the matplotlib figure to plotly
+    plotly_fig = go.Figure(
+        data=[go.Box(y=df[df['genre'] == genre]['combined_target'], name=genre) for genre in df['genre'].unique()])
 
-    # reviews_count and rating -> good correlation with targets, but also between them -> only reviews_count
-    # number_of_stars and mean_first_stars -> no-linear correlation with target, but linear correlation between them -> only number_of_stars
+    plotly_fig.update_layout(title='Sales Ranking by Genre', xaxis_title='Genre', yaxis_title='Sales Ranking')
+    
+    return plotly_fig
