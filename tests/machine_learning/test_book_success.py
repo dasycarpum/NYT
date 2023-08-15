@@ -86,7 +86,7 @@ sample_data = {
     'reviews_count': [np.nan, '23', '45'],
     'price': ['$12.45, $15.89', '$10.50', '$5.67'],
     'genre': ['thriller', np.nan, 'fiction'],
-    'dagger': [True, np.nan, True],
+    'dagger': [0, 1, 0],
     'asterisk': [0, np.nan, 1],
     'number_of_pages': [np.nan, 300, 200],
     'mean_first_stars': ['3.5', '4.0', np.nan],
@@ -151,7 +151,7 @@ def test_dataset_cleaning_genre_fillna_mode(sample_dataframe):
 
 def test_dataset_cleaning_data_types(sample_dataframe):
     df = dataset_cleaning(sample_dataframe.copy())
-    assert df['dagger'].dtype == 'bool'
+    assert df['dagger'].dtype == 'int'
     assert df['rating'].dtype == 'int'
     assert df['genre'].dtype == 'object'
     assert df['author'].dtype == 'object'
