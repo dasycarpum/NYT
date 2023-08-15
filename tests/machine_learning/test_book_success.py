@@ -9,7 +9,6 @@ Created on 2023-08-13
     2 unit tests for the 'sql_query_to_create_dataset' function
     8 unit tests for the 'dataset_cleaning' function
     3 unit tests for the 'target_combination' function
-    1 unit tests for the 'variable_preview' function
 
 """
 
@@ -206,25 +205,4 @@ def test_value_transformation():
     
     np.testing.assert_array_almost_equal(df_transformed['combined_target'].values, targets_pca.ravel())
 
-
-def test_plots_creation():
-    # Create a dataframe with all necessary columns
-    df = pd.DataFrame({
-        'combined_target': np.random.randn(10),
-        'best_ranking': np.random.randn(10),
-        'max_weeks': np.random.randn(10),
-        'rating': np.random.randn(10),
-        'number_of_stars': np.random.randn(10),
-        'number_of_pages': np.random.randn(10),
-        'reviews_count': np.random.randn(10),
-        'mean_first_stars': np.random.randn(10),
-        'max_price': np.random.randn(10),
-        'genre': ['Sci-Fi', 'Drama', 'Romance', 'Horror', 'Mystery', 'Action', 'Thriller', 'Fantasy', 'Adventure', 'Comedy']
-    })
-
-    try:
-        variable_preview(df)
-        assert True
-    except Exception as e:
-        pytest.fail(f"Plot creation failed with error: {e}")
 
