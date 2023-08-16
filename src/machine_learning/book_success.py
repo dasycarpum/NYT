@@ -314,6 +314,7 @@ def create_box_plot(df):
 
 # Preprocessing
 # =============
+
 def preprocessing(df):
     """
     Performs pre-processing on a pandas DataFrame to prepare it for a 
@@ -378,6 +379,7 @@ def preprocessing(df):
 
 # Model ML - regression
 # =====================
+
 def regression_model(X_train, X_test, y_train, y_test):
     """
     Trains a GradientBoostingRegressor model on the given training data and evaluates its performance on the test data. It also prints out the mean absolute error for both the training and test sets, and the mean squared error for the test set.
@@ -389,7 +391,7 @@ def regression_model(X_train, X_test, y_train, y_test):
         y_test (array-like): The target variable for the test set.
 
     Returns:
-        reg (GradientBoostingRegressor): The regression model
+        reg (Object): A fitted model object. Typically, this could be a fitted instance of a scikit-learn estimator (GradientBoostingRegressor).
         y_pred (array-like): The model's predictions for the test set.
         r2 (float): The R-squared score of the model on the test set.
 
@@ -409,18 +411,109 @@ def regression_model(X_train, X_test, y_train, y_test):
     y_pred = reg.predict(X_test)
 
     target_predicted = reg.predict(X_train)
-    score = mean_absolute_error(y_train, target_predicted)
-    print(f"The training error of our model is {score:.2f}")
-
+    score_train = mean_absolute_error(y_train, target_predicted)
+    
     target_predicted = reg.predict(X_test)
-    score = mean_absolute_error(y_test, target_predicted)
-    print(f"The testing error of our model is {score:.2f}")
-
+    score_test = mean_absolute_error(y_test, target_predicted)
+    
     # Evaluate the model
     mse = mean_squared_error(y_test, y_pred)
-    print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
-
+    
     r2 = r2_score(y_test, y_pred)
-    print("The R^2 score on the test set is: {:.4f}".format(r2))
 
-    return reg, y_pred, r2
+    return reg, y_pred, score_train, score_test, mse, r2
+
+# Visualizing results
+# ===================
+
+def plot_actual_vs_predicted_values(y_test, y_pred):
+    """
+    Plots actual values (y_test) against the predicted values (y_pred).
+
+    The function uses plotly.graph_objects's Scatter function to create the plot. 
+    The x-axis represents the actual values, and the y-axis represents the predicted values. 
+   
+    Args:
+        y_test (array-like or list): The actual values. These values are expected to be real numbers.
+        y_pred (array-like or list): The predicted values, expected to be in line with y_test in terms of shape and content.
+
+    Returns:
+        plotly.graph_objects.Figure
+
+    """
+    fig = go.Figure(data=[go.Scatter(x=y_test, y=y_pred, mode='markers')])
+    
+    fig.update_layout(
+        title="Actual vs. Predicted Values",
+        xaxis_title="Actual Values",
+        yaxis_title="Predicted Values"
+    )
+    
+    return fig
+
+
+def plot_predicted_values_vs_residual(y_test, y_pred):
+    """
+    Plots predicted values (y_pred) against the residuals (y_test - y_pred).
+
+    This function calculates residuals as the difference between actual and predicted values. It uses plotly.graph_objects's Scatter function to create the plot. The x-axis represents the predicted values, and the y-axis represents the residuals. 
+
+    Args:
+        y_test (array-like or list): The actual values. These values are expected to be real numbers.
+        y_pred (array-like or list): The predicted values, expected to be in line with y_test in terms of shape and content.
+
+    Returns:
+        plotly.graph_objects.Figure
+
+    """
+    residuals = y_test - y_pred
+    fig = go.Figure(data=[go.Scatter(x=y_pred, y=residuals, mode='markers')])
+
+    fig.update_layout(
+        title="Predicted vs. Residuals",
+        xaxis_title="Predicted Values",
+        yaxis_title="Residuals"
+    )
+    
+    return fig
+
+
+def plot_feature_importances(reg, columns, top_n=7):
+    """
+    Plots the importance of features as determined by a fitted model.
+
+    The importance of each feature is represented by the length of the bar in the bar chart. Features are sorted in descending order of importance, with the most important feature at the top.
+
+    Args:
+        reg (Object): A fitted model object that exposes a `feature_importances_` attribute. Typically, this could be a fitted instance of a scikit-learn estimator like RandomForestRegressor or GradientBoostingRegressor.
+        
+        columns (list): The names of the features (columns in your dataset), as a list of strings. The order should be the same as the order of feature values fed to the estimator.
+
+        top_n (int): Number of top features to display. Default is 7.
+
+    Raises:
+        AttributeError: If `reg` does not have a `feature_importances_` attribute.
+
+    Returns:
+        plotly.graph_objects.Figure
+
+    """
+    if not hasattr(reg, 'feature_importances_'):
+        raise AttributeError("The provided model object does not have a 'feature_importances_' attribute.")
+    
+    feature_importances = reg.feature_importances_
+    sorted_idx = np.argsort(feature_importances)[-top_n:] 
+
+    fig = go.Figure(data=[go.Bar(
+        x=feature_importances[sorted_idx],
+        y=np.array(columns)[sorted_idx],
+        orientation='h'
+    )])
+
+    fig.update_layout(
+        title=f"Top {top_n} Feature Importances",
+        xaxis_title="Importance",
+        yaxis_title="Feature"
+    )
+    
+    return fig
