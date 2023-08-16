@@ -11,7 +11,7 @@ Created on 2023-08-13
     3 unit tests for the 'target_combination' function
     9 unit tests for the variable previews (3 functions)
     5 unit tests for the 'preprocessing' function
-
+    3 unit tests for the 'regression_model' function
 """
 
 import os
@@ -22,6 +22,8 @@ import pandas as pd
 from sqlalchemy.engine import Engine
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.ensemble import GradientBoostingRegressor
 import plotly.graph_objs as go
 
 # Getting the absolute path of the current script file
@@ -32,7 +34,7 @@ current_script_dir = os.path.dirname(current_script_path)
 src_dir = os.path.join(current_script_dir, '../..', 'src', 'machine_learning')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
-from book_success import sql_query_to_create_dataset, dataset_cleaning, target_combination, create_heatmap, create_3D_scatter, create_box_plot, preprocessing
+from book_success import sql_query_to_create_dataset, dataset_cleaning, target_combination, create_heatmap, create_3D_scatter, create_box_plot, preprocessing, regression_model
 
 
 def test_sql_query_to_create_dataset_valid_output(mocker):
@@ -389,4 +391,45 @@ def test_scaling():
     # Check if mean is approximately 0 and standard deviation is approximately 1 for scaled training data
     assert np.isclose(X_train_scaled.mean(axis=0), 0).all(), "Means are not close to 0"
     assert np.isclose(X_train_scaled.std(axis=0), 1).all(), "Standard deviations are not close to 1"
+
+
+def test_input_type():
+    X_train, X_test = np.array([[1], [2], [3]]), np.array([[4], [5], [6]])
+    y_train, y_test = np.array([1, 2, 3]), np.array([4, 5, 6])
+
+    # Ensure it doesn't raise an error with correct input
+    try:
+        regression_model(X_train, X_test, y_train, y_test)
+    except ValueError:
+        pytest.fail("ValueError was raised with valid input")
+
+    # Ensure it raises an error with invalid input
+    with pytest.raises(ValueError):
+        regression_model(X_train.tolist(), X_test, y_train, y_test)
+
+
+def test_model_output():
+    X_train = np.array([[i] for i in range(1, 11)])  
+    X_test = np.array([[i] for i in range(11, 16)])
+    y_train = np.array([i*1.1 + np.random.normal(0, 0.1) for i in range(1, 11)])
+    y_test = np.array([i*1.1 + np.random.normal(0, 0.1) for i in range(11, 16)])
+
+    reg, y_pred, r2 = regression_model(X_train, X_test, y_train, y_test)
+    
+    assert isinstance(reg, GradientBoostingRegressor)
+    assert len(y_pred) == len(X_test)
+    assert not np.isnan(r2)
+
+
+def test_r2_score_range():
+    X_train = np.array([[i] for i in range(1, 1001)])  # Train on more data
+    X_test = np.array([[i] for i in range(101, 1051)])
+    
+    y_train = np.array([i*1.1 for i in range(1, 1001)])  # No noise
+    y_test = np.array([i*1.1 for i in range(101, 1051)])
+    
+    _, _, r2 = regression_model(X_train, X_test, y_train, y_test)
+    
+    assert -1 <= r2 <= 1
+
 

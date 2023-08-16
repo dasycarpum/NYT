@@ -398,6 +398,9 @@ def regression_model(X_train, X_test, y_train, y_test):
         etc.).
         
     """
+    if not isinstance(X_train, np.ndarray) or not isinstance(X_test, np.ndarray):
+        raise ValueError("X_train and X_test should be numpy arrays")
+
     # Initialize the model
     reg = GradientBoostingRegressor(n_estimators=50, learning_rate=0.2,  max_depth = 3, random_state=42)
 
