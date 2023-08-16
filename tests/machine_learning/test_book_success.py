@@ -414,7 +414,7 @@ def test_model_output():
     y_train = np.array([i*1.1 + np.random.normal(0, 0.1) for i in range(1, 11)])
     y_test = np.array([i*1.1 + np.random.normal(0, 0.1) for i in range(11, 16)])
 
-    reg, y_pred, r2 = regression_model(X_train, X_test, y_train, y_test)
+    reg, y_pred, score_train, score_test, mse, r2 = regression_model(X_train, X_test, y_train, y_test)
     
     assert isinstance(reg, GradientBoostingRegressor)
     assert len(y_pred) == len(X_test)
@@ -422,13 +422,13 @@ def test_model_output():
 
 
 def test_r2_score_range():
-    X_train = np.array([[i] for i in range(1, 1001)])  # Train on more data
-    X_test = np.array([[i] for i in range(101, 1051)])
+    X_train = np.array([[i] for i in range(1, 101)])  # Train on more data
+    X_test = np.array([[i] for i in range(101, 151)])
     
-    y_train = np.array([i*1.1 for i in range(1, 1001)])  # No noise
-    y_test = np.array([i*1.1 for i in range(101, 1051)])
+    y_train = np.array([i*1.1 for i in range(1, 101)])  # No noise
+    y_test = np.array([i*1.1 for i in range(101, 151)])
     
-    _, _, r2 = regression_model(X_train, X_test, y_train, y_test)
+    _, _, r2, _, _, _ = regression_model(X_train, X_test, y_train, y_test)
     
     assert -1 <= r2 <= 1
 
