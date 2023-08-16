@@ -466,8 +466,16 @@ def plot_predicted_values_vs_residual(y_test, y_pred):
         plotly.graph_objects.Figure
 
     """
-    residuals = y_test - y_pred
-    fig = go.Figure(data=[go.Scatter(x=y_pred, y=residuals, mode='markers')])
+    # Convert input lists to numpy arrays for element-wise operations
+    y_test_array = np.array(y_test)
+    y_pred_array = np.array(y_pred)
+
+    # Check for mismatched shapes
+    if y_test_array.shape != y_pred_array.shape:
+        raise ValueError("y_test and y_pred must have the same shape")
+
+    residuals = y_test_array - y_pred_array
+    fig = go.Figure(data=[go.Scatter(x=y_pred, y=residuals.tolist(), mode='markers')])
 
     fig.update_layout(
         title="Predicted vs. Residuals",

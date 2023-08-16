@@ -12,6 +12,7 @@ Created on 2023-08-13
     9 unit tests for the variable previews (3 functions)
     5 unit tests for the 'preprocessing' function
     3 unit tests for the 'regression_model' function
+    14 unit tests for the result visualization (3 functions)
 """
 
 import os
@@ -34,7 +35,7 @@ current_script_dir = os.path.dirname(current_script_path)
 src_dir = os.path.join(current_script_dir, '../..', 'src', 'machine_learning')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
-from book_success import sql_query_to_create_dataset, dataset_cleaning, target_combination, create_heatmap, create_3D_scatter, create_box_plot, preprocessing, regression_model
+from book_success import sql_query_to_create_dataset, dataset_cleaning, target_combination, create_heatmap, create_3D_scatter, create_box_plot, preprocessing, regression_model, plot_actual_vs_predicted_values, plot_feature_importances, plot_predicted_values_vs_residual
 
 
 def test_sql_query_to_create_dataset_valid_output(mocker):
@@ -432,4 +433,126 @@ def test_r2_score_range():
     
     assert -1 <= r2 <= 1
 
+
+def test_correct_return_type():
+    y_test = [1, 2, 3]
+    y_pred = [1, 2, 3]
+    fig = plot_actual_vs_predicted_values(y_test, y_pred)
+    assert isinstance(fig, go.Figure)
+
+def test_correct_plot_titles():
+    y_test = [1, 2, 3]
+    y_pred = [1, 2, 3]
+    fig = plot_actual_vs_predicted_values(y_test, y_pred)
+    
+    assert fig.layout.title.text == "Actual vs. Predicted Values"
+    assert fig.layout.xaxis.title.text == "Actual Values"
+    assert fig.layout.yaxis.title.text == "Predicted Values"
+
+def test_correct_data_plotting():
+    y_test = [1, 2, 3]
+    y_pred = [1.1, 2.1, 3.1]
+    fig = plot_actual_vs_predicted_values(y_test, y_pred)
+
+    assert len(fig.data) == 1
+    assert fig.data[0].x == tuple(y_test)
+    assert fig.data[0].y == tuple(y_pred)
+
+def test_empty_inputs():
+    y_test = []
+    y_pred = []
+    fig = plot_actual_vs_predicted_values(y_test, y_pred)
+
+    assert len(fig.data) == 1
+    assert fig.data[0].x == ()
+    assert fig.data[0].y == ()
+
+
+def test_correct_return_type_residual():
+    y_test = [1, 2, 3]
+    y_pred = [1, 2, 3]
+    fig = plot_predicted_values_vs_residual(y_test, y_pred)
+    assert isinstance(fig, go.Figure)
+
+def test_correct_plot_titles_residual():
+    y_test = [1, 2, 3]
+    y_pred = [1, 2, 3]
+    fig = plot_predicted_values_vs_residual(y_test, y_pred)
+
+    assert fig.layout.title.text == "Predicted vs. Residuals"
+    assert fig.layout.xaxis.title.text == "Predicted Values"
+    assert fig.layout.yaxis.title.text == "Residuals"
+
+
+def test_correct_data_plotting_residual():
+    y_test = [1, 2, 3]
+    y_pred = [1.1, 2.1, 3.1]
+
+    # Convert to numpy arrays for element-wise subtraction
+    residuals = np.array(y_test) - np.array(y_pred)
+    fig = plot_predicted_values_vs_residual(y_test, y_pred)
+
+    assert len(fig.data) == 1
+    assert fig.data[0].x == tuple(y_pred)
+    assert fig.data[0].y == tuple(residuals)  
+
+
+def test_empty_inputs_residual():
+    y_test = []
+    y_pred = []
+    fig = plot_predicted_values_vs_residual(y_test, y_pred)
+
+    assert len(fig.data) == 1
+    assert fig.data[0].x == ()
+    assert fig.data[0].y == ()
+
+
+class MockRegressor:
+    def __init__(self, feature_importances):
+        self.feature_importances_ = feature_importances
+
+def test_correct_return_type_feature_importances():
+    reg = MockRegressor(np.array([0.1, 0.3, 0.6]))
+    columns = ['A', 'B', 'C']
+    fig = plot_feature_importances(reg, columns)
+    assert isinstance(fig, go.Figure)
+
+def test_correct_number_of_features():
+    reg = MockRegressor(np.array([0.1, 0.3, 0.6, 0.05, 0.5, 0.01, 0.09, 0.3]))
+    columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+    fig = plot_feature_importances(reg, columns)
+    assert len(fig.data[0].y) == 7
+
+def test_correct_sorting_order():
+    reg = MockRegressor(np.array([0.1, 0.3, 0.6]))
+    columns = ['A', 'B', 'C']
+    fig = plot_feature_importances(reg, columns)
+
+    assert list(fig.data[0].y) == ['A', 'B', 'C']
+
+def test_missing_feature_importances():
+    class BadRegressor:
+        pass
+
+    reg = BadRegressor()
+    columns = ['A', 'B', 'C']
+    
+    with pytest.raises(AttributeError):
+        plot_feature_importances(reg, columns)
+
+def test_correct_axis_titles():
+    reg = MockRegressor(np.array([0.1, 0.3, 0.6]))
+    columns = ['A', 'B', 'C']
+    fig = plot_feature_importances(reg, columns, top_n=3)
+
+    assert fig.layout.title.text == "Top 3 Feature Importances"
+    assert fig.layout.xaxis.title.text == "Importance"
+    assert fig.layout.yaxis.title.text == "Feature"
+
+def test_all_features_less_than_top_n():
+    reg = MockRegressor(np.array([0.1, 0.3, 0.6]))
+    columns = ['A', 'B', 'C']
+    fig = plot_feature_importances(reg, columns, top_n=5)
+
+    assert len(fig.data[0].y) == 3
 
