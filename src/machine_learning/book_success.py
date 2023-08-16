@@ -5,7 +5,7 @@ Created on 2023-06-17
 
 @author: Roland
 
-@abstract: use an ML model to predict the success of a book based on certain parameters such as genre, author, price, and initial reviews. This can help publishers and authors understand which elements might contribute more towards a book's success.
+@abstract: use an ML model to predict sales ranking of a book based on certain parameters such as genre, author, price, and initial reviews. This can help publishers and authors understand which elements might contribute more towards a book's success.
 """
 
 import re
@@ -15,6 +15,8 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+from sklearn.ensemble import GradientBoostingRegressor
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -373,3 +375,49 @@ def preprocessing(df):
 
     return X_train.columns, X_train_scaled, X_test_scaled, y_train, y_test
 
+
+# Model ML - regression
+# =====================
+def regression_model(X_train, X_test, y_train, y_test):
+    """
+    Trains a GradientBoostingRegressor model on the given training data and evaluates its performance on the test data. It also prints out the mean absolute error for both the training and test sets, and the mean squared error for the test set.
+
+    Args:
+        X_train (array-like): The feature matrix for the training set.
+        X_test (array-like): The feature matrix for the test set.
+        y_train (array-like): The target variable for the training set.
+        y_test (array-like): The target variable for the test set.
+
+    Returns:
+        reg (GradientBoostingRegressor): The regression model
+        y_pred (array-like): The model's predictions for the test set.
+        r2 (float): The R-squared score of the model on the test set.
+
+    Raises:
+        ValueError: If the inputs are not as expected (wrong type, shape, 
+        etc.).
+        
+    """
+    # Initialize the model
+    reg = GradientBoostingRegressor(n_estimators=50, learning_rate=0.2,  max_depth = 3, random_state=42)
+
+    # Fit the model
+    reg.fit(X_train, y_train)
+    y_pred = reg.predict(X_test)
+
+    target_predicted = reg.predict(X_train)
+    score = mean_absolute_error(y_train, target_predicted)
+    print(f"The training error of our model is {score:.2f}")
+
+    target_predicted = reg.predict(X_test)
+    score = mean_absolute_error(y_test, target_predicted)
+    print(f"The testing error of our model is {score:.2f}")
+
+    # Evaluate the model
+    mse = mean_squared_error(y_test, y_pred)
+    print("The mean squared error (MSE) on test set: {:.4f}".format(mse))
+
+    r2 = r2_score(y_test, y_pred)
+    print("The R^2 score on the test set is: {:.4f}".format(r2))
+
+    return reg, y_pred, r2

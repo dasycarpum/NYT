@@ -26,7 +26,7 @@ src_dir = os.path.join(current_script_dir, '../..')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
 from config import DB_ENGINE
-from src.machine_learning.book_success import sql_query_to_create_dataset, dataset_cleaning, target_combination, create_3D_scatter, create_heatmap, create_box_plot, preprocessing
+from src.machine_learning.book_success import sql_query_to_create_dataset, dataset_cleaning, target_combination, create_3D_scatter, create_heatmap, create_box_plot, preprocessing, regression_model
 
 
 
@@ -44,6 +44,7 @@ def main():
     var_box_plot_fig = create_box_plot(df_complete)
 
     columns, X_train, X_test, y_train, y_test = preprocessing(df_complete)
+    reg, y_pred, r2 = regression_model(X_train, X_test, y_train, y_test)
 
     app = dash.Dash(__name__)
     app.layout = html.Div([
