@@ -13,6 +13,11 @@ import os
 import sys
 import json
 from sqlalchemy import create_engine, text
+import dash
+import dash_bootstrap_components as dbc
+from dash import dcc, html
+from dash.dependencies import Input, Output
+import pandas as pd
 
 # Getting the absolute path of the current script file
 current_script_path = os.path.abspath(__file__)
@@ -95,7 +100,34 @@ def new_book_announcement(engine):
             shortened_text = " ".join(rev_text.split()[:10]) + "..." if len(rev_text.split()) > 10 else rev_text
             print(f"\nReview ID: {rev_id}, Stars: {stars}, Title: {rev_title}, Date: {rev_date}, Book id review: {rev_book_id}")
             print(f"Text: {shortened_text}")
-        
+
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+
+app.layout = html.Div([
+    dcc.Tabs(id="tabs", value='tab-1', children=[
+        dcc.Tab(label='Individual Book Insights', value='tab-1'),
+        dcc.Tab(label='Comparative Insights', value='tab-2'),
+    ]),
+    html.Div(id='tabs-content')
+])
+
+@app.callback(Output('tabs-content', 'children'),
+              [Input('tabs', 'value')])
+def render_content(tab):
+    if tab == 'tab-1':
+        return html.Div([
+            # Your individual book insights components go here
+            html.H1("Individual Book Insights")
+            # Example: dbc.Card(), dcc.Graph(), etc.
+        ])
+    elif tab == 'tab-2':
+        return html.Div([
+            # Your comparative insights components go here
+            html.H1("Comparative Insights")
+            # Example: dbc.Card(), dcc.Graph(), etc.
+        ])
+
+
 
 def main():
     """
@@ -121,6 +153,7 @@ def main():
     # Create a SQLAlchemy engine that will interface with the database.
     engine = create_engine(DB_ENGINE)
 
+    """
     # Collect book data from The New York Times, Amazon, and Apple Store. 
     data_collection(year=int(year), month=int(month), day=int(day), engine= engine)
 
@@ -134,9 +167,12 @@ def main():
     load_book_into_database(PROC_DATA_ABS_PATH + 'book.json', engine, 'book')
     load_rank_into_database(PROC_DATA_ABS_PATH + 'rank.csv', engine, 'rank')
     load_review_into_database(PROC_DATA_ABS_PATH + 'review.csv', engine, 'review')
+    """
 
     # Message following the incorporation of a new bestseller
-    new_book_announcement(engine)
+    # new_book_announcement(engine)
+
+    app.run_server(debug=True, host='0.0.0.0')
 
 
 if __name__ == "__main__":

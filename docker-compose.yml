@@ -26,6 +26,8 @@ services:
       dockerfile: Dockerfile  # Use this Dockerfile for building the image
     volumes:
       - .:/app  # Mount the application directory
+    ports:
+      - "8050:8050"
     environment:  # Environment variables for the application service
       YEAR: 2023
       MONTH: 5
