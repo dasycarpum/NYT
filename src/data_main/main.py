@@ -19,7 +19,6 @@ from dash import dcc, html
 from dash.dependencies import Input, Output
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
-import pandas as pd
 
 # Getting the absolute path of the current script file
 current_script_path = os.path.abspath(__file__)
@@ -38,6 +37,7 @@ from src.data_main.raw_data_transformation import extract_transform
 # Create a SQLAlchemy engine that will interface with the database.
 engine = create_engine(DB_ENGINE)
 
+# Dashboard preparation
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 app.layout = html.Div([
@@ -440,14 +440,14 @@ def _render_comparative_insights():
 
 def main():
     """
-    Execute the main for data collection, extraction, transformation, loading, and announcement.
+    Execute the main for data collection, extraction, transformation, loading, and dashboard.  
 
     This function follows these steps:
     1. Creates a SQLAlchemy engine to interface with the database.
     2. Collects book data from The New York Times, Amazon, and Apple Store for the specific date.
     3. Extracts and transforms the collected raw data.
     4. Loads the processed data into book, rank, and review tables in the PostgreSQL database.
-    5. Announces the details of the most recently added book in the database.
+    5. Display in a dashboard the main features of this new book.
 
     Global Variables:
         DB_ENGINE (str): The database engine connection string.
@@ -459,8 +459,6 @@ def main():
     month = os.environ.get("MONTH")
     day = os.environ.get("DAY")
     
-
-    """
     # Collect book data from The New York Times, Amazon, and Apple Store. 
     data_collection(year=int(year), month=int(month), day=int(day), engine= engine)
 
@@ -474,8 +472,8 @@ def main():
     load_book_into_database(PROC_DATA_ABS_PATH + 'book.json', engine, 'book')
     load_rank_into_database(PROC_DATA_ABS_PATH + 'rank.csv', engine, 'rank')
     load_review_into_database(PROC_DATA_ABS_PATH + 'review.csv', engine, 'review')
-    """
 
+    # Dashboard for the new bestseller 
     app.run_server(debug=True, host='0.0.0.0')
 
 

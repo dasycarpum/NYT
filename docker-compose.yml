@@ -30,8 +30,8 @@ services:
       - "8050:8050"
     environment:  # Environment variables for the application service
       YEAR: 2023
-      MONTH: 5
-      DAY: 22
+      MONTH: 1
+      DAY: 9
     depends_on:  # This service depends on db and firefox services
       - db
       - firefox
