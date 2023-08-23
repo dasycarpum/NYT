@@ -20,10 +20,10 @@ services:
       POSTGRES_DB: nyt
 
   app:  # This is the application service
-    image: nyt-app:latest
+    image: nyt-app:data
     build:
       context: .  # Build context is the current directory
-      dockerfile: Dockerfile  # Use this Dockerfile for building the image
+      dockerfile: Dockerfile.data  # Use this Dockerfile for building the image
     volumes:
       - .:/app  # Mount the application directory
     ports:

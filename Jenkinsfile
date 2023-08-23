@@ -27,7 +27,7 @@ pipeline {
             }
         }
 
-        stage('Compile Python') {
+        stage('Compile Python for Data') {
             steps {
                 sh '''#!/bin/bash
                     source .NYT/bin/activate
@@ -37,11 +37,11 @@ pipeline {
             }
         }
 
-        stage('Unit Tests') {
+        stage('Unit Tests for Data') {
             steps {
                 script {
                     def imageName = "nyt-app:test"
-                    def composeFile = "docker-compose.yml"
+                    def composeFile = "docker-compose.data.yml"
 
                     sh "docker-compose -f ${composeFile} down -v"
                     sh "docker rmi -f ${imageName} || true"
@@ -74,14 +74,13 @@ pipeline {
         }
 
 
-        stage('Docker Build and Compose') {
+        stage('Docker Build and Compose for Data') {
             steps {
                 script {
-                    def imageName = "nyt-app"
-                    def imageTag = "latest"
-                    def composeFile = "docker-compose.yml"
+                    def imageName = "nyt-app:data"
+                    def composeFile = "docker-compose.data.yml"
 
-                    sh "docker rmi -f ${imageName}:${imageTag} || true"
+                    sh "docker rmi -f ${imageName} || true"
                     
                     sh """
                         echo "Building Docker image using docker-compose..."
