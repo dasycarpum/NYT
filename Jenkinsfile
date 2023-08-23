@@ -104,7 +104,7 @@ pipeline {
             steps {
                 script {
                     def imageName = "nyt-app:ml-test"
-                    def composeFile = "docker-compose.yml"
+                    def composeFile = "docker-compose.data.yml"
 
                     sh "docker-compose -f ${composeFile} down -v"
                     sh "docker rmi -f ${imageName} || true"
