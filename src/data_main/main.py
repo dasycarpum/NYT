@@ -106,7 +106,7 @@ def _fetch_latest_book_details():
 
 
 def _fetch_best_and_worst_reviews():
-    """Fetch the latest reviews from the database."""
+    """Fetch the best and the worst reviews from the database."""
     review_query = """
         WITH LatestBook AS (
             SELECT MAX(id) AS max_id FROM book
@@ -271,12 +271,170 @@ def _render_individual_insights():
         dcc.Graph(figure=rank_evolution_fig)
     ])
 
+
+def _fetch_medium_book_details():
+    """Fetch the details of the last and the medium books in the database."""
+    book_query = """
+      WITH LatestBook AS (
+            SELECT MAX(id) AS max_id FROM book
+        ),
+
+        LatestBookDetails AS (
+            SELECT
+                CAST(data->>'number_of_stars' AS float) AS latest_number_of_stars,
+                REPLACE(data->>'rating', ',', '')::float AS latest_rating,
+                CAST(data->>'reviews_count' AS float) AS latest_reviews_count
+            FROM 
+                book
+            WHERE 
+                id = (SELECT max_id FROM LatestBook)
+        ),
+
+        AggregateDetails AS (
+            SELECT
+                AVG(CAST(data->>'number_of_stars' AS float)) AS avg_number_of_stars,
+                AVG(CAST(REPLACE(data->>'rating', ',', '') AS float)) AS avg_rating,
+                AVG(CAST(data->>'reviews_count' AS float)) AS avg_reviews_count
+            FROM book
+        )
+
+        SELECT
+            lbd.latest_number_of_stars,
+            ad.avg_number_of_stars,
+            lbd.latest_rating,
+            ad.avg_rating,
+            lbd.latest_reviews_count,
+            ad.avg_reviews_count
+        FROM LatestBookDetails lbd
+        CROSS JOIN AggregateDetails ad;
+        """
+    
+    with engine.connect() as connection:
+        result = connection.execute(text(book_query))
+        book_details = result.fetchone()
+
+    return book_details
+
+def _fetch_rank_distribution():
+    """Fetch the rank distribution of all books and new bestseller."""
+    rank_query = """
+    WITH LatestBook AS (
+        SELECT MAX(id) AS max_id FROM book
+    ),
+
+    BestRanks AS (
+        SELECT
+            id_book,
+            MIN(rank) AS best_rank
+        FROM 
+            rank
+        GROUP BY
+            id_book
+    )
+
+    SELECT
+        br.best_rank,
+        CASE WHEN br.id_book = lb.max_id THEN 'latest' ELSE 'other' END AS book_type
+    FROM 
+        BestRanks br
+    JOIN
+        LatestBook lb
+    ON
+        br.id_book = lb.max_id OR br.id_book != lb.max_id;
+    """
+
+    with engine.connect() as connection:
+        result = connection.execute(text(rank_query))
+        data = result.fetchall()
+
+        # Using numeric indices.
+        ranks = [row[0] for row in data if row[1] == 'other']
+        latest_rank = [row[0] for row in data if row[1] == 'latest'][0]
+
+    return ranks, latest_rank
+
+
 def _render_comparative_insights():
     """Render comparative insights across multiple books."""
+    book_details = _fetch_medium_book_details()
+    ranks, latest_rank = _fetch_rank_distribution()
+    
+    latest_number_of_stars, avg_number_of_stars, latest_rating, avg_rating, latest_reviews_count, avg_reviews_count = book_details
+
+    # Construct the figures for the gauges
+    fig = make_subplots(rows=1, cols=3, 
+                        specs=[[{"type": "indicator"}, {"type": "indicator"}, {"type": "indicator"}]])
+
+    # Gauge for number_of_stars
+    fig.add_trace(
+        go.Indicator(
+            mode="gauge+number+delta",
+            value=latest_number_of_stars,
+            delta={'reference': avg_number_of_stars},
+            gauge={'axis': {'range': [0, 5]}},
+            title={'text': '<br>Number of Stars'}
+        ),
+        row=1, col=1
+    )
+
+    # Gauge for rating
+    fig.add_trace(
+        go.Indicator(
+            mode="gauge+number+delta",
+            value=latest_rating,
+            delta={'reference': avg_rating},
+            gauge={'axis': {'range': [0, max(latest_rating + 500, avg_rating + 500)]}},
+            title={'text': '<br>Rating'}
+        ),
+        row=1, col=2
+    )
+
+    # Gauge for reviews_count
+    fig.add_trace(
+        go.Indicator(
+            mode="gauge+number+delta",
+            value=latest_reviews_count,
+            delta={'reference': avg_reviews_count},
+            gauge={'axis': {'range': [0, max(latest_reviews_count + 500, avg_reviews_count + 500)]}},
+            title={'text': '<br>Reviews Count'}
+        ),
+        row=1, col=3
+    )
+
+    fig.update_layout(title_text='Comparative metrics for the new book against the bestseller average')
+
+    # Histogram for rank distribution
+    trace1 = go.Histogram(
+        x=ranks,
+        opacity=0.6,
+        name='All Bestsellers'
+    )
+
+    # Vertical bar for the latest book rank
+    trace2 = go.Scatter(
+        x=[latest_rank, latest_rank],
+        y=[0, 800],  # Adjust the y-values depending on the scale of your data
+        mode='lines',
+        name='New Book',
+        line=dict(color='red', width=2)
+    )
+
+    layout = go.Layout(
+        title='Distribution of the best rank reached by bestsellers, with the new book highlighted',
+        xaxis=dict(title='Best Rank'),
+        yaxis=dict(title='Number of Bestsellers'),
+        barmode='overlay'
+    )
+    
     return html.Div([
-        # Your comparative insights components go here
-        html.H1("Comparative Insights")
-        # Example: dbc.Card(), dcc.Graph(), etc.
+        html.H1("Comparative Insights"),
+        html.H3("Metrics Pane"),
+        dcc.Graph(figure=fig),
+        html.H3("Ranking"),
+        dcc.Graph(
+            id='rank-distribution',
+            figure={'data': [trace1, trace2], 'layout': layout}
+        )
     ])
 
 
