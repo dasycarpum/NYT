@@ -2,14 +2,17 @@
 FROM python:3.10-slim
 
 # Set the working directory in the container to /app
-WORKDIR /app
+WORKDIR /usr/src/app
 
-# Copy requirements and install them
-COPY requirements.txt .
+# Copy the requirements.txt file into the container at /usr/src/app
+COPY requirements.txt ./
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the project into the container
-COPY . .
+# Copy the useful file into the container at /usr/src/app
+COPY config.py ./
+COPY src/ ./src/
 
 # Set the main script as the container's entrypoint
-CMD ["python", "src/data_main/main.py"]
+CMD ["python", "./src/data_main/main.py"]

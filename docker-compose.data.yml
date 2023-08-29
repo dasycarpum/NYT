@@ -9,7 +9,7 @@
 version: '3.8'
 services:
   db:   # This is the database service
-    image: nyt-db  # image to be used for the 'db' service.
+    image: nyt-dump  # image to be used for the 'db' service.
     volumes:  # Mount local direct. as a vol. attached inside the 'db' container
       - dbdata:/var/lib/postgresql/data 
     ports: # Port 5432 of 'db' container ass. with port 5433 on host machine
@@ -20,12 +20,12 @@ services:
       POSTGRES_DB: nyt
 
   app:  # This is the application service
-    image: nyt-app:data
+    image: nyt-app-data
     build:
       context: .  # Build context is the current directory
       dockerfile: Dockerfile.data  # Use this Dockerfile for building the image
     volumes:
-      - .:/app  # Mount the application directory
+      - .:/usr/src/app  # Mount the application directory
     ports:
       - "8050:8050"
     environment:  # Environment variables for the application service
