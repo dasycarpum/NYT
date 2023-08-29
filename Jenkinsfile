@@ -40,7 +40,7 @@ pipeline {
         stage('Unit Tests for Data') {
             steps {
                 script {
-                    def imageName = "nyt-app:test"
+                    def imageName = "nyt-app-data:test"
                     def composeFile = "docker-compose.data.yml"
 
                     sh "docker-compose -f ${composeFile} down -v"
@@ -49,19 +49,19 @@ pipeline {
                     
                     sh """
                         docker-compose -f ${composeFile} run --rm app \
-                            pytest -vv --junitxml=/app/tests/test-results-data-collection.xml /app/tests/data_collection/
+                            pytest -vv --junitxml=/usr/src/app/tests/test-results-data-collection.xml /usr/src/app/tests/data_collection/
                     """
                     sh "cp ./tests/test-results-data-collection.xml ./test-results-data-collection.xml"
 
                     sh """
                         docker-compose -f ${composeFile} run --rm app \
-                            pytest -vv --junitxml=/app/tests/test-results-data-ingestion.xml /app/tests/data_ingestion/
+                            pytest -vv --junitxml=/usr/src/app/tests/test-results-data-ingestion.xml /usr/src/app/tests/data_ingestion/
                     """
                     sh "cp ./tests/test-results-data-ingestion.xml ./test-results-data-ingestion.xml"
 
                     sh """
                         docker-compose -f ${composeFile} run --rm app \
-                            pytest -vv --junitxml=/app/tests/test-results-data-main.xml /app/tests/data_main/
+                            pytest -vv --junitxml=/usr/src/app/tests/test-results-data-main.xml /usr/src/app/tests/data_main/
                     """
                     sh "cp ./tests/test-results-data-main.xml ./test-results-data-main.xml"
                 }
@@ -77,7 +77,7 @@ pipeline {
         stage('Docker Build and Compose for Data') {
             steps {
                 script {
-                    def imageName = "nyt-app:data"
+                    def imageName = "nyt-app-data"
                     def composeFile = "docker-compose.data.yml"
 
                     sh "docker rmi -f ${imageName} || true"
@@ -103,7 +103,7 @@ pipeline {
         stage('Unit Tests for ML') {
             steps {
                 script {
-                    def imageName = "nyt-app:ml-test"
+                    def imageName = "nyt-app-ml:test"
                     def composeFile = "docker-compose.data.yml"
 
                     sh "docker-compose -f ${composeFile} down -v"
@@ -112,7 +112,7 @@ pipeline {
         
                     sh """
                         docker-compose -f docker-compose.ml.yml run --rm app \
-                            pytest -vv --junitxml=/app/tests/test-results-ml.xml /app/tests/machine_learning/
+                            pytest -vv --junitxml=/usr/src/app/tests/test-results-ml.xml /usr/src/app/tests/machine_learning/
                     """
                     sh "cp ./tests/test-results-ml.xml ./test-results-ml.xml"
                 }
@@ -127,7 +127,7 @@ pipeline {
         stage('Docker Build and Compose for ML') {
             steps {
                 script {
-                    def imageName = "nyt-app:ml"
+                    def imageName = "nyt-app-ml"
                     def composeFile = "docker-compose.ml.yml"
 
                     sh "docker rmi -f ${imageName} || true"

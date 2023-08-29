@@ -9,7 +9,7 @@
 version: '3.8'
 services:
   db:   # This is the database service
-    image: nyt-db  # image to be used for the 'db' service.
+    image: nyt-dump  # image to be used for the 'db' service.
     volumes:  # Mount local direct. as a vol. attached inside the 'db' container
       - dbdata:/var/lib/postgresql/data 
     ports: # Port 5432 of 'db' container ass. with port 5433 on host machine
