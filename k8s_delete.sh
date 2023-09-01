@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Declare an array of deployments to delete
-declare -a deployments=("postgres-db-deployment" "python-app")
+declare -a deployments=("postgres-db-deployment" "python-app" "firefox-deployment")
 
 # Declare an array of services to delete
-declare -a services=("postgres-service" "python-app-service")
+declare -a services=("postgres-service" "python-app-service" "firefox-service")
 
 # Namespace in which to delete the resources
-NAMESPACE="default"
+NAMESPACE="nyt-data"
 
 # Loop to delete deployments
 for deployment in "${deployments[@]}"
@@ -23,6 +23,8 @@ do
   kubectl delete service ${service} -n ${NAMESPACE}
 done
 
-kubectl delete ingress python-app-ingress -n ${NAMESPACE}
+kubectl delete ingress my-app-ingress -n ${NAMESPACE}
+
+# kubectl delete pvc postgres-pvc -n ${NAMESPACE}
 
 echo "All specified deployments and services have been deleted."

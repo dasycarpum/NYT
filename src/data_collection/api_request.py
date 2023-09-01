@@ -9,6 +9,7 @@ Created on 2023-05-18
 """
 
 import requests
+from requests.exceptions import Timeout, RequestException
 import pandas as pd
 
 
@@ -27,16 +28,37 @@ def api_request(endpoint, api_key, save=False):
     Returns:
         pandas DataFrame : normalized results data
     """
-    response = requests.get(endpoint + 'api-key=' + api_key, timeout=5).json()
+    
+    if not endpoint.startswith("https://"):
+        raise ValueError("Endpoint should be an HTTPS URL")
+
+    session = requests.Session()
 
     try:
-        json_results = response['results']
-        df_results = pd.json_normalize(json_results)
+        # Send Request
+        response = session.get(endpoint + 'api-key=' + api_key, timeout=5)
+        
+        # Validate Response
+        if response.status_code == 200:
+            
+            if 'application/json' in response.headers.get('Content-Type'):
+                json_data = response.json()
+                
+                if 'results' in json_data:
+                    json_results = json_data['results']
 
-        if save:
-            df_results.to_csv('../../data/raw_data/api_results.csv', index=False) 
+                    df_results = pd.json_normalize(json_results)
 
-        return df_results
-    except KeyError as e:
-        print(f"The key {e} does not exist in the response.")
-        return None
+                    return df_results
+
+                else:
+                    print("Received unexpected JSON structure")
+            else:
+                print("Received unexpected content type")
+        else:
+            print(f"Failed to get data: {response.status_code}")
+
+    except Timeout:
+        print("The request timed out")
+    except RequestException as e:
+        print(f"An error occurred: {e}")

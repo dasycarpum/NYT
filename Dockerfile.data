@@ -14,5 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY config.py ./
 COPY src/ ./src/
 
+# Make port 8050 available to the outside world (Dash default port)
+EXPOSE 8050
+
 # Set the main script as the container's entrypoint
 CMD ["python", "./src/data_main/main.py"]
