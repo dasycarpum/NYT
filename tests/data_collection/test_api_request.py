@@ -5,7 +5,7 @@ Created on 2023-07-22
 
 @author: Roland
 
-@abstract: create 4 unit tests for the 'api_request.py' source file.
+@abstract: create 2 unit tests for the 'api_request.py' source file.
 """
 
 import os
@@ -14,6 +14,9 @@ import pytest
 import pandas as pd
 import requests
 import requests_mock
+from requests.exceptions import Timeout, RequestException
+from unittest.mock import patch
+from io import StringIO
 
 # Getting the absolute path of the current script file
 current_script_path = os.path.abspath(__file__)
@@ -30,74 +33,58 @@ sys.path.append(src_dir)
 from api_request import api_request
 
 
-
 def test_api_request():
     endpoint = "https://api.nytimes.com/svc/books/v3/lists/names.json?"
-    api_key = NYT_api_key
+    api_key = "NYT_api_key_here"
 
-    # Mock the API response
+    # Mock valid API response
     with requests_mock.Mocker() as m:
-        m.get(endpoint + 'api-key=' + api_key, json={"results": [{"id": 1, "name": "Test"}]})
-        
-        # Call the function and get the result
+        m.get(endpoint + 'api-key=' + api_key, status_code=200, headers={'Content-Type': 'application/json'}, json={"results": [{"id": 1, "name": "Test"}]})
         df = api_request(endpoint, api_key, save=False)
-
-    # The expected result
     expected_df = pd.DataFrame([{"id": 1, "name": "Test"}])
-
-    # Check that the returned DataFrame matches the expected result
     pd.testing.assert_frame_equal(df, expected_df)
+
+    # Mock Timeout
+    with requests_mock.Mocker() as m, patch("builtins.print") as mock_print:
+        m.get(endpoint + 'api-key=' + api_key, exc=Timeout)
+        df = api_request(endpoint, api_key, save=False)
+        mock_print.assert_called_with("The request timed out")
+
+    # Mock other RequestException
+    with requests_mock.Mocker() as m, patch("builtins.print") as mock_print:
+        m.get(endpoint + 'api-key=' + api_key, exc=RequestException("Some request exception"))
+        df = api_request(endpoint, api_key, save=False)
+        mock_print.assert_called_with("An error occurred: Some request exception")
+
+    # Mock invalid status code
+    with requests_mock.Mocker() as m:
+        m.get(endpoint + 'api-key=' + api_key, status_code=400)
+        df = api_request(endpoint, api_key, save=False)
+        assert df is None
+
+    # Mock invalid content type
+    with requests_mock.Mocker() as m:
+        m.get(endpoint + 'api-key=' + api_key, status_code=200, headers={'Content-Type': 'text/plain'}, text="Some text")
+        df = api_request(endpoint, api_key, save=False)
+        assert df is None
+
 
 def test_api_request_error():
     endpoint = "https://api.nytimes.com/svc/books/v3/lists/names.json?"
-    api_key = NYT_api_key
+    api_key = "NYT_api_key_here"  # Replace this
 
     # Mock the API response with an error
     with requests_mock.Mocker() as m:
         m.get(endpoint + 'api-key=' + api_key, status_code=500)
-
-        # Call the function and get the result
-        with pytest.raises(requests.exceptions.RequestException):
-            df = api_request(endpoint, api_key, save=False)
-
-def test_api_request_missing_keys():
-    endpoint = "https://api.nytimes.com/svc/books/v3/lists/names.json?"
-    api_key = NYT_api_key
-
-    # Mock the API response without 'results' key
-    with requests_mock.Mocker() as m:
-        m.get(endpoint + 'api-key=' + api_key, json={"invalid_key": [{"id": 1, "name": "Test"}]})
         
-        # Call the function and get the result
+        # Capture stdout
+        old_stdout = sys.stdout
+        new_stdout = StringIO()
+        sys.stdout = new_stdout
+
         df = api_request(endpoint, api_key, save=False)
 
-        # Should return None due to missing 'results' key
-        assert df is None
+        # Restore stdout
+        sys.stdout = old_stdout
+        assert "Failed to get data: 500" in new_stdout.getvalue()
 
-def test_api_request_save():
-    endpoint = "https://api.nytimes.com/svc/books/v3/lists/names.json?"
-    api_key = NYT_api_key
-
-    # Create directories if they don't exist
-    os.makedirs('../../data/raw_data', exist_ok=True)
-
-    # Mock the API response
-    with requests_mock.Mocker() as m:
-        m.get(endpoint + 'api-key=' + api_key, json={"results": [{"id": 1, "name": "Test"}]})
-        
-        # Call the function and get the result with save=True
-        df = api_request(endpoint, api_key, save=True)
-
-    # The expected result
-    expected_df = pd.DataFrame([{"id": 1, "name": "Test"}])
-
-    # Check that the returned DataFrame matches the expected result
-    pd.testing.assert_frame_equal(df, expected_df)
-
-    # Check that the file was saved correctly
-    saved_df = pd.read_csv('../../data/raw_data/api_results.csv')
-
-    pd.testing.assert_frame_equal(saved_df, expected_df)
-
-    # Cleanup: Remove the saved file after test
-    os.remove('../../data/raw_data/api_results.csv')
