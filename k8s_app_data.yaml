@@ -14,15 +14,11 @@ spec:
     spec:
       containers:
         - name: python-app
+          envFrom:
+            - configMapRef:
+                name: date-config
           image: dasycarpum/nyt-app-data:latest
           imagePullPolicy: Always
-          env:
-            - name: YEAR
-              value: "2023"
-            - name: MONTH
-              value: "1"
-            - name: DAY
-              value: "9"
           ports:
             - containerPort: 8050
 

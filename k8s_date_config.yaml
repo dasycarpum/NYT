@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: date-config
+data:
+  YEAR: "2023"
+  MONTH: "1"
+  DAY: "16"
