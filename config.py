@@ -11,12 +11,12 @@ Created on 2023-07-10
 import os
 
 # NYTimes
-NYT_api_key = "pNHWGr1vumfKOJ2QwkQHELoH5zbhslrp"
+NYT_api_key = os.environ.get('NYT_API_KEY')
 
 # PostgreSQL
 DB_NAME = 'nyt'
 DB_USER = 'postgres'
-DB_PASS = 'admin'
+DB_PASS = os.environ.get('DB_PASS')
 DB_HOST = 'postgres-service'
 DB_PORT = '5432'
 DB_ENGINE='postgresql://'+DB_USER+':'+DB_PASS+'@'+DB_HOST+':'+DB_PORT+'/'+DB_NAME

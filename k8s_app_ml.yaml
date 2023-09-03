@@ -16,6 +16,12 @@ spec:
         - name: python-app
           image: dasycarpum/nyt-app-ml:latest
           imagePullPolicy: Always
+          env:
+          - name: DB_PASS
+            valueFrom:
+              secretKeyRef:
+                name: my-secret
+                key: DB_PASS
           ports:
             - containerPort: 8050
 

@@ -19,6 +19,17 @@ spec:
                 name: date-config
           image: dasycarpum/nyt-app-data:latest
           imagePullPolicy: Always
+          env:
+          - name: DB_PASS
+            valueFrom:
+              secretKeyRef:
+                name: my-secret
+                key: DB_PASS
+          - name: NYT_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: my-secret
+                key: NYT_API_KEY
           ports:
             - containerPort: 8050
 
