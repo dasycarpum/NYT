@@ -148,7 +148,7 @@ def main():
                 html.Div([dcc.Graph(figure=feat_imp_fig)], style={'marginTop': 20})  # Displaying feature importance below the metrics
             ])
 
-    app.run_server(debug=True, host='0.0.0.0', port=8050)
+    app.run_server(debug=False, host='0.0.0.0', port=8050)
 
 
 if __name__ == "__main__":

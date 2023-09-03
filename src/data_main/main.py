@@ -443,11 +443,10 @@ def main():
     Execute the main for data collection, extraction, transformation, loading, and dashboard.  
 
     This function follows these steps:
-    1. Creates a SQLAlchemy engine to interface with the database.
-    2. Collects book data from The New York Times, Amazon, and Apple Store for the specific date.
-    3. Extracts and transforms the collected raw data.
-    4. Loads the processed data into book, rank, and review tables in the PostgreSQL database.
-    5. Display in a dashboard the main features of this new book.
+    1. Collects book data from The New York Times, Amazon, and Apple Store for the specific date.
+    2. Extracts and transforms the collected raw data.
+    3. Loads the processed data into book, rank, and review tables in the PostgreSQL database.
+    4. Display in a dashboard the main features of this new book.
 
     Global Variables:
         DB_ENGINE (str): The database engine connection string.
@@ -474,7 +473,7 @@ def main():
     load_review_into_database(PROC_DATA_ABS_PATH + 'review.csv', engine, 'review')
 
     # Dashboard for the new bestseller 
-    app.run_server(debug=True, host='0.0.0.0')
+    app.run_server(debug=False, host='0.0.0.0', port=8050)
 
 
 if __name__ == "__main__":
