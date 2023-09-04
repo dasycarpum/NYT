@@ -51,23 +51,17 @@ pipeline {
                     sh "docker-compose -f ${composeFile} build app"
                     
                     sh """
-                        docker-compose -f ${composeFile} run --rm \ 
-                        -e DB_PASS=${DB_PASS} \
-                        app pytest -vv --junitxml=/usr/src/app/tests/test-results-data-collection.xml /usr/src/app/tests/data_collection/
+                        docker-compose -f ${composeFile} run --rm -e DB_PASS=${DB_PASS} app pytest -vv --junitxml=/usr/src/app/tests/test-results-data-collection.xml /usr/src/app/tests/data_collection/
                     """
                     sh "cp ./tests/test-results-data-collection.xml ./test-results-data-collection.xml"
 
                     sh """
-                        docker-compose -f ${composeFile} run --rm \
-                        -e DB_PASS=${DB_PASS} \
-                        app pytest -vv --junitxml=/usr/src/app/tests/test-results-data-ingestion.xml /usr/src/app/tests/data_ingestion/
+                        docker-compose -f ${composeFile} run --rm -e DB_PASS=${DB_PASS} app pytest -vv --junitxml=/usr/src/app/tests/test-results-data-ingestion.xml /usr/src/app/tests/data_ingestion/
                     """
                     sh "cp ./tests/test-results-data-ingestion.xml ./test-results-data-ingestion.xml"
 
                     sh """
-                        docker-compose -f ${composeFile} run --rm \
-                        -e DB_PASS=${DB_PASS} \
-                        app pytest -vv --junitxml=/usr/src/app/tests/test-results-data-main.xml /usr/src/app/tests/data_main/
+                        docker-compose -f ${composeFile} run --rm -e DB_PASS=${DB_PASS} app pytest -vv --junitxml=/usr/src/app/tests/test-results-data-main.xml /usr/src/app/tests/data_main/
                     """
                     sh "cp ./tests/test-results-data-main.xml ./test-results-data-main.xml"
                 }
@@ -117,9 +111,7 @@ pipeline {
                     sh "docker-compose -f ${composeFile} build app"
         
                     sh """
-                        docker-compose -f docker-compose.ml.yml run --rm \
-                        -e DB_PASS=${DB_PASS} \
-                        app pytest -vv --junitxml=/usr/src/app/tests/test-results-ml.xml /usr/src/app/tests/machine_learning/
+                        docker-compose -f docker-compose.ml.yml run --rm -e DB_PASS=${DB_PASS} app pytest -vv --junitxml=/usr/src/app/tests/test-results-ml.xml /usr/src/app/tests/machine_learning/
                     """
                     sh "cp ./tests/test-results-ml.xml ./test-results-ml.xml"
                 }
