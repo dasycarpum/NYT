@@ -16,7 +16,7 @@ services:
       - "5433:5432"  
     environment:  # Used to create a new database at container startup
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin
+      POSTGRES_PASSWORD: ${DB_PASS}
       POSTGRES_DB: nyt
 
   app:  # This is the application service
