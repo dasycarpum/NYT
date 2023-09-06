@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: my-pv
+spec:
+  capacity:
+    storage: 1Gi # Make sure this aligns with your PVC request
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce # Make this the same as your PVC
+  persistentVolumeReclaimPolicy: Delete # Or Retain, depending on your needs
+  storageClassName: local-path # Must match the StorageClass of your PVC
+  local:
+    path: /var/lib/k8s-pvs/pv001
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+            - roland-ms-7c37

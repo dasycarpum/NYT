@@ -12,10 +12,9 @@ Created on 2023-08-13
 import os
 import sys
 from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
-import dash_table
+from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
 
 # Getting the absolute path of the current script file
@@ -28,6 +27,32 @@ src_dir = os.path.join(current_script_dir, '../..')
 sys.path.append(src_dir)
 from config import DB_ENGINE
 from src.machine_learning.book_success import sql_query_to_create_dataset, dataset_cleaning, target_combination, create_3D_scatter, create_heatmap, create_box_plot, preprocessing, regression_model, plot_actual_vs_predicted_values, plot_feature_importances, plot_predicted_values_vs_residual
+
+
+
+def get_data_from_database():
+    try:
+        # Attempt to create the database engine
+        engine = create_engine(DB_ENGINE)
+    except Exception as e:
+        raise RuntimeError(f"Failed to create database engine: {e}")
+
+    try:
+        # Attempt to fetch data
+        df_raw = sql_query_to_create_dataset(engine)
+        
+        # Check if the DataFrame is empty
+        if df_raw.empty:
+            raise ValueError("Fetched dataset is empty.")
+            
+        return df_raw
+    
+    except SQLAlchemyError as e:
+        # Specific handling for SQLAlchemy errors
+        raise RuntimeError(f"SQLAlchemy error occurred: {e}")
+    except Exception as e:
+        # General error handling
+        raise RuntimeError(f"Failed to fetch dataset: {e}")
 
 
 
@@ -51,8 +76,7 @@ def main():
 
     """
     # 1.Create a SQLAlchemy engine that will interface with the database and fetch the raw dataset
-    engine = create_engine(DB_ENGINE)
-    df_raw = sql_query_to_create_dataset(engine)
+    df_raw = get_data_from_database()
     
     # 2. Perform data cleaning and transformation.
     df_cleaned =  dataset_cleaning(df_raw)
@@ -124,9 +148,8 @@ def main():
                 html.Div([dcc.Graph(figure=feat_imp_fig)], style={'marginTop': 20})  # Displaying feature importance below the metrics
             ])
 
-    app.run_server(debug=True, host='0.0.0.0')
+    app.run_server(debug=False, host='0.0.0.0', port=8050)
 
 
 if __name__ == "__main__":
     main()
-

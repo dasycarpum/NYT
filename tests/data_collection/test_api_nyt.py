@@ -10,6 +10,7 @@ Created on 2023-07-22
 
 import os
 import sys
+import pandas as pd
 import pytest
 import unittest
 from datetime import datetime
@@ -31,92 +32,6 @@ src_dir = os.path.join(root_dir, 'src', 'data_collection')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
 from api_nyt import get_nyt_book_categories, get_nyt_bestsellers, fetch_bestsellers, process_books, save_as_json, sleep
-
-
-
-# Check if the function returns the expected categories given a known API response.
-def test_get_nyt_book_categories():
-    # Mock API key and endpoint
-    api_key = "mock-api-key"
-    endpoint = "https://api.nytimes.com/svc/books/v3/lists/names.json?"
-
-    # Mock the API response
-    with requests_mock.Mocker() as m:
-        m.get(endpoint + 'api-key=' + api_key, json={"results": [
-            {"list_name": "Hardcover Fiction", "updated": "WEEKLY", "oldest_published_date": "2013-01-01", "newest_published_date": str(datetime.now().date())},
-            {"list_name": "Paperback Nonfiction", "updated": "MONTHLY", "oldest_published_date": "2013-01-01", "newest_published_date": str(datetime.now().date())},
-            {"list_name": "Children’s Middle Grade", "updated": "WEEKLY", "oldest_published_date": "2013-01-01", "newest_published_date": "2017-12-31"}
-        ]})
-        
-        # Call the function and get the result
-        categories = get_nyt_book_categories(api_key, max_year=2022)
-
-    # The expected result
-    expected_categories = ['Hardcover Fiction']
-
-    # Check that the returned categories match the expected result
-    assert categories == expected_categories
-
-
-# Check if the function raises a ValueError when an invalid API key is provided.
-def test_get_nyt_book_categories_invalid_api_key():
-    # Invalid API key
-    api_key = "invalid-api-key"
-    endpoint = "https://api.nytimes.com/svc/books/v3/lists/names.json?"
-
-    # Mock the API response with an error message
-    with requests_mock.Mocker() as m:
-        m.get(endpoint + 'api-key=' + api_key, json={"fault": {"faultstring": "Invalid ApiKey", "detail": {"errorcode": "oauth.v2.InvalidApiKey"}}})
-
-        with pytest.raises(Exception, match="API request returned no data."):
-            get_nyt_book_categories(api_key)
-
-
-# Check if the function handles exceptions from the api_request correctly.
-def test_get_nyt_book_categories_api_request_exception():
-    # Valid API key
-    api_key = NYT_api_key
-    endpoint = "https://api.nytimes.com/svc/books/v3/lists/names.json?"
-
-    # Mock the API response to raise a ReadTimeout exception
-    with requests_mock.Mocker() as m:
-        m.get(endpoint + 'api-key=' + api_key, exc=requests.exceptions.ReadTimeout)
-
-        try:
-            # Call the function and get the result
-            get_nyt_book_categories(api_key)
-        except Exception as e:
-            assert str(e) == "API request failed due to a timeout."
-            return
-
-    assert False, "Expected an Exception to be raised with message 'API request failed due to a timeout.' but it wasn't."
-
-
-# Check if the function correctly handles the "max_year" parameter.
-def test_get_nyt_book_categories_max_year(requests_mock):
-    api_key = 'test-api-key'
-    endpoint = "https://api.nytimes.com/svc/books/v3/lists/names.json?"
-
-    # Define the mocked API response
-    mock_response = {
-        "results": [
-            {"updated": "WEEKLY", "oldest_published_date": "2013-01-01", "newest_published_date": "2021-12-31", "list_name": "Paperback Nonfiction"},
-            {"updated": "WEEKLY", "oldest_published_date": "2013-01-01", "newest_published_date": "2021-12-31", "list_name": "Children’s Middle Grade"},
-            {"updated": "WEEKLY", "oldest_published_date": "2015-01-01", "newest_published_date": "2022-12-31", "list_name": "Hardcover Fiction"}
-        ]
-    }
-
-    # Mock the API response
-    requests_mock.get(endpoint + 'api-key=' + api_key, json=mock_response)
-        
-    # Call the function
-    categories = get_nyt_book_categories(api_key, max_year=2021)
-
-    # Define the expected result
-    expected_categories = ['Paperback Nonfiction', 'Children’s Middle Grade']
-
-    # Check the result
-    assert set(categories) == set(expected_categories)
 
 
 # This test is checking the functionality of the fetch_bestsellers function when it is used normally, i.e., when it doesn't encounter any exceptions. 

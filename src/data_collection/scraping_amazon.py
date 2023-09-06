@@ -315,7 +315,7 @@ def scrape_amazon_books(url):
     for attempt in range(max_attempts):
         try:
             driver = webdriver.Remote(
-                command_executor='http://firefox:4444/wd/hub',
+                command_executor='http://firefox-service:4444/wd/hub',
                 options=options)
             delay = random.uniform(2.1, 5.1)  # generate random delay
             time.sleep(delay)
