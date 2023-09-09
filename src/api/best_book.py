@@ -10,9 +10,10 @@ Created on 2023-09-08
 
 import os
 import sys
-import pandas as pd
+from fastapi import FastAPI, HTTPException
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
+from typing import List
 
 # Getting the absolute path of the current script file
 current_script_path = os.path.abspath(__file__)
@@ -23,6 +24,8 @@ src_dir = os.path.join(current_script_dir, '../..')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
 # from config import DB_ENGINE
+
+app = FastAPI()
 
 DB_NAME = 'nyt'
 DB_USER = 'postgres'
@@ -39,7 +42,68 @@ except Exception as e:
     raise RuntimeError(f"Failed to create database engine: {e}")
 
 
-query = """
+@app.get("/status")
+async def read_status():
+    """
+    Check the health and functionality of the API.
+
+    Args: None
+        
+    Returns:
+        dict: a dictionary with "status": "ok" if the API is healthy
+    """
+    return {"status": "OK"}
+
+
+@app.get("/all_genres", response_model=List[str])
+async def read_all_genres():
+    """
+    Fetches all distinct genres from the 'book' table.
+
+    This function uses SQLAlchemy to execute a SQL query against a PostgreSQL database.
+    The query fetches all distinct genres present in the 'book' table.
+
+    Returns:
+        List[str]: A list of all distinct genres in the 'book' table.
+
+    Raises:
+        HTTPException: An exception is raised if no data is found (HTTP status code 404),
+                       or if there is a SQLAlchemy error (HTTP status code 500).
+    """
+    query = "SELECT DISTINCT data->>'genre' AS genre FROM book;"
+    
+    try:
+        with engine.connect() as connection:
+            result = connection.execute(text(query))
+            genres = [row[0] for row in result]
+            
+            if not genres:
+                raise HTTPException(status_code=404, detail="No genres found")
+            return genres
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/best_book")
+async def read_best_books(year: str, genre: str):
+    """
+    Fetches the best books based on the specified year and genre.
+
+    This function uses SQLAlchemy to execute a SQL query against a PostgreSQL database. The query fetches the top 5 books of the specified genre and year, sorted by their weeks on the list, while ensuring that each 'author - title' pair is unique. The result is returned in JSON format.
+
+    Args:
+        year (str): The year the books were published.
+        genre (str): The genre of the books.
+
+    Returns:
+        JSON: A JSON-formatted list containing the top 5 books of the specified genre and year.
+
+    Raises:
+        HTTPException: An exception is raised if no data is found (HTTP status code 404), or if there is a SQLAlchemy error (HTTP status code 500).
+
+    """
+    query = f"""
     WITH UniqueBooks AS (
         SELECT DISTINCT ON (b.data->>'author', b.data->>'title')
             b.data->>'title' AS title,
@@ -50,8 +114,8 @@ query = """
         JOIN
             rank AS r ON b.id = r.id_book
         WHERE
-            b.data->>'publication_date' LIKE '2020-%'
-            AND b.data->>'genre' = 'Mysteries & Thrillers'
+            b.data->>'publication_date' LIKE '{year}-%'
+            AND b.data->>'genre' = '{genre}'
         ORDER BY
             b.data->>'author',
             b.data->>'title',
@@ -60,24 +124,14 @@ query = """
     SELECT json_agg(row_to_json(UniqueBooks.*))
     FROM (SELECT * FROM UniqueBooks ORDER BY weeks_on_list DESC LIMIT 5) AS UniqueBooks;
     """
-
-try:
-    with engine.connect() as connection:
-        result = connection.execute(text(query))
-        best_book_json = result.fetchone()[0]  # This should be a JSON array
-
-        # Check if the DataFrame is empty
-        if not best_book_json:
-            raise ValueError("Fetched dataset is empty.")
-        print(best_book_json)
-
-except SQLAlchemyError as e:
-    # Specific handling for SQLAlchemy errors
-    raise RuntimeError(f"SQLAlchemy error occurred: {e}")
-except Exception as e:
-    # General error handling
-    raise RuntimeError(f"Failed to fetch dataset: {e}")
-
-
-
-
+    try:
+        with engine.connect() as connection:
+            result = connection.execute(text(query))
+            best_book_json = result.fetchone()[0]
+            if not best_book_json:
+                raise HTTPException(status_code=404, detail="No data found")
+            return best_book_json
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=f"SQLAlchemy error occurred: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch dataset: {e}")
