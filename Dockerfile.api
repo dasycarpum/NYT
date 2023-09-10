@@ -1,0 +1,21 @@
+# Use a parent image
+FROM python:3.10-slim
+
+# Set the working directory inside the container
+WORKDIR /usr/src/app
+
+# Copy the requirements.txt file into the container at /usr/src/app
+COPY requirements.txt ./
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the useful file into the container at /usr/src/app
+COPY config.py ./
+COPY src/ ./src/
+
+# Make port 8000 available to the outside world (FastAPI default port)
+EXPOSE 8000
+
+# Set the main script as the container's entrypoint
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
