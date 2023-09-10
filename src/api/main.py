@@ -28,7 +28,7 @@ from src.api.best_book import read_all_genres, read_best_books
 DB_NAME = 'nyt'
 DB_USER = 'postgres'
 DB_PASS = 'admin'
-DB_HOST = 'localhost'
+DB_HOST = 'db'
 DB_PORT = '5432'
 DB_ENGINE='postgresql://'+DB_USER+':'+DB_PASS+'@'+DB_HOST+':'+DB_PORT+'/'+DB_NAME
 
