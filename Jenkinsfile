@@ -138,5 +138,15 @@ pipeline {
                 }
             }
         }
+
+        stage('Compile Python for API') {
+            steps {
+                sh '''#!/bin/bash
+                    source .NYT/bin/activate
+                    python -m py_compile src/api/main.py
+                '''
+                stash(name: 'compiled-results-api', includes: 'src/api/*.py*')
+            }
+        }
     }
 }
