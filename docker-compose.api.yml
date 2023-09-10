@@ -1,0 +1,35 @@
+# Created on 2023-09-10
+
+# @author: Roland
+
+# @abstract: this Docker Compose file defines 2 services: a database
+# service using a custom PostgreSQL image and an application service, for 
+# expose SQL query code as an API, built from a local Dockerfile
+
+version: '3.8'
+services:
+  db:
+    image: nyt-dump
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: nyt
+
+  app:
+    image: nyt-app-api
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    volumes:
+      - .:/usr/src/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+volumes:
+  dbdata:
