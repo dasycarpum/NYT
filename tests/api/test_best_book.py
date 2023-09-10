@@ -5,7 +5,7 @@ Created on 2023-08-13
 
 @abstract: create for the 'best_book.py' source file,
     2 unit tests for the 'read_all_genres' function
-    y unit tests for the 'read_best_books' function
+    2 unit tests for the 'read_best_books' function
     
 """
 
@@ -13,6 +13,7 @@ import os
 import sys
 from unittest.mock import MagicMock
 import pytest
+from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException
 
 # Getting the absolute path of the current script file
@@ -48,3 +49,32 @@ async def test_read_all_genres_exception():
         await read_all_genres(mock_engine, mock_app)
     assert exc_info.value.status_code == 500
     assert exc_info.value.detail == "Database Error"
+
+
+@pytest.mark.asyncio
+async def test_read_best_books_successful():
+    mock_engine = MagicMock()
+    mock_app = MagicMock()
+    mock_connection = mock_engine.connect.return_value.__enter__.return_value
+    mock_result = [{'title': 'Book1', 'author': 'Author1', 'weeks_on_list': 12}]
+
+    mock_connection.execute.return_value.fetchone.return_value = [mock_result]
+
+    best_books = await read_best_books(mock_engine, mock_app, '2023', 'Fiction')
+    
+    assert best_books == mock_result
+
+
+@pytest.mark.asyncio
+async def test_read_best_books_sqlalchemy_error():
+    mock_engine = MagicMock()
+    mock_app = MagicMock()
+    mock_connection = mock_engine.connect.return_value.__enter__.return_value
+    
+    mock_connection.execute.side_effect = SQLAlchemyError("SQLAlchemy error")
+
+    with pytest.raises(HTTPException) as exc_info:
+        await read_best_books(mock_engine, mock_app, '2023', 'Fiction')
+
+    assert exc_info.value.status_code == 500
+    assert "SQLAlchemy error occurred" in exc_info.value.detail
