@@ -22,15 +22,9 @@ current_script_dir = os.path.dirname(current_script_path)
 src_dir = os.path.join(current_script_dir, '../..')
 # Adding the absolute path to system path
 sys.path.append(src_dir)
-# from config import DB_ENGINE
+from config import DB_ENGINE
 from src.api.best_book import read_all_genres, read_best_books
 
-DB_NAME = 'nyt'
-DB_USER = 'postgres'
-DB_PASS = 'admin'
-DB_HOST = 'db'
-DB_PORT = '5432'
-DB_ENGINE='postgresql://'+DB_USER+':'+DB_PASS+'@'+DB_HOST+':'+DB_PORT+'/'+DB_NAME
 
 try:
     # Attempt to create the database engine
