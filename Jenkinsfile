@@ -171,5 +171,21 @@ pipeline {
                 }
             }
         }
+
+        stage('Docker Build and Compose for API') {
+            steps {
+                script {
+                    def imageName = "nyt-app-api"
+                    def composeFile = "docker-compose.api.yml"
+
+                    sh "docker rmi -f ${imageName} || true"
+                    
+                    sh """
+                        echo "Building Docker image for API using docker-compose..."
+                        docker-compose -f ${composeFile} build app
+                    """
+                }
+            }
+        }
     }
 }
