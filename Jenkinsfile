@@ -138,5 +138,54 @@ pipeline {
                 }
             }
         }
+
+        stage('Compile Python for API') {
+            steps {
+                sh '''#!/bin/bash
+                    source .NYT/bin/activate
+                    python -m py_compile src/api/main.py
+                '''
+                stash(name: 'compiled-results-api', includes: 'src/api/*.py*')
+            }
+        }
+
+        stage('Unit Tests for API') {
+            steps {
+                script {
+                    def imageName = "nyt-app-api:test"
+                    def composeFile = "docker-compose.api.yml"
+
+                    sh "docker-compose -f ${composeFile} down -v"
+                    sh "docker rmi -f ${imageName} || true"
+                    sh "docker-compose -f ${composeFile} build app"
+        
+                    sh """
+                        docker-compose -f docker-compose.api.yml run --rm -e DB_PASS=${DB_PASS} app pytest -vv --junitxml=/usr/src/app/tests/test-results-api.xml /usr/src/app/tests/api/
+                    """
+                    sh "cp ./tests/test-results-api.xml ./test-results-api.xml"
+                }
+            }
+            post {
+                always {
+                    junit '**/test-results-api.xml'
+                }
+            }
+        }
+
+        stage('Docker Build and Compose for API') {
+            steps {
+                script {
+                    def imageName = "nyt-app-api"
+                    def composeFile = "docker-compose.api.yml"
+
+                    sh "docker rmi -f ${imageName} || true"
+                    
+                    sh """
+                        echo "Building Docker image for API using docker-compose..."
+                        docker-compose -f ${composeFile} build app
+                    """
+                }
+            }
+        }
     }
 }
