@@ -27,9 +27,9 @@ services:
     volumes:
       - .:/usr/src/app   # Mount the application directory
     ports:
-      - "8050:8050"
-    depends_on:  # This service depends on db and firefox services
-      - db
+      - "8050:8050" # Dash default port
+    depends_on:  
+      - db # This service depends on db service
 
 volumes:
   dbdata:

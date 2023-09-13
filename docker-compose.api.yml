@@ -8,27 +8,27 @@
 
 version: '3.8'
 services:
-  db:
-    image: nyt-dump
-    volumes:
+  db:  # This is the database service
+    image: nyt-dump # image to be used for the 'db' service.
+    volumes:  # Mount local direct. as a vol. attached inside the 'db' container
       - dbdata:/var/lib/postgresql/data
-    ports:
-      - "5434:5432"
-    environment:
+    ports: # Port 5432 of 'db' container ass. with port 5434 on host machine
+      - "5434:5432" 
+    environment: # Used to create a new database at container startup
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin
+      POSTGRES_PASSWORD: ${DB_PASS}
       POSTGRES_DB: nyt
 
-  app:
+  app: # This is the application service
     image: nyt-app-api
     build:
-      context: .
-      dockerfile: Dockerfile.api
-    volumes:
-      - .:/usr/src/app
-    ports:
-      - "8000:8000"
-    depends_on:
+      context: .  # Build context is the current directory
+      dockerfile: Dockerfile.api # Use this Dockerfile for building the image
+    volumes: 
+      - .:/usr/src/app # Mount the application directory
+    ports:  
+      - "8000:8000" # FastAPI default port
+    depends_on: # This service depends on db service
       - db
 
 volumes:
