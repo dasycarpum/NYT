@@ -25,7 +25,18 @@ pipeline {
                 '''
             }
         }
-        
+
+        stage('Environment Check') {
+            steps {
+                sh '''#!/bin/bash
+                    source .NYT/bin/activate
+                    python -m site
+                    pwd
+                    ls
+                '''
+            }
+        }
+
         stage('Build Docker images') {
             steps {
                 script {
