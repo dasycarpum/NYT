@@ -37,6 +37,16 @@ pipeline {
             }
         }
 
+        stage('Compile Python') {
+            steps {
+                sh '''#!/bin/bash
+                    source .NYT/bin/activate
+                    python -m py_compile src/api/main.py
+                '''
+                stash(name: 'compiled-results-api', includes: 'src/api/*.py*')
+            }
+        }
+
         stage('Build Docker images') {
             steps {
                 script {
