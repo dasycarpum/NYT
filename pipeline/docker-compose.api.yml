@@ -22,10 +22,10 @@ services:
   app: # This is the application service
     image: nyt-app-api
     build:
-      context: ../  # Build context is the current directory
+      context: ../../  # Build context is the NYT directory
       dockerfile: pipeline/Dockerfile.api # Use this Dockerfile for building the image
     volumes: 
-      - .:/usr/src/app # Mount the application directory
+      - ..:/usr/src/app # Mount the parent directory
     ports:  
       - "8000:8000" # FastAPI default port
     depends_on: # This service depends on db service

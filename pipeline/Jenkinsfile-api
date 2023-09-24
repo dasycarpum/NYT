@@ -7,7 +7,6 @@ pipeline {
         DOCKER_IMAGE_API = "nyt-app-api"
         DOCKER_TAG = "v.${BUILD_ID}.0"
         DOCKER_COMPOSE_FILE = "pipeline/docker-compose.api.yml"
-        DB_PASS = credentials('db-pass')
     }
     agent any
 
@@ -53,10 +52,12 @@ pipeline {
                 script {
                     sh "docker-compose -f $DOCKER_COMPOSE_FILE down -v"
                     sh "docker-compose -f $DOCKER_COMPOSE_FILE build app"
-        
-                    sh """
-                        docker-compose -f $DOCKER_COMPOSE_FILE run --rm -e DB_PASS=${DB_PASS} app pytest -vv --junitxml=/usr/src/app/tests/test-results-api.xml /usr/src/app/tests/api/
-                    """
+            
+                    withCredentials([string(credentialsId: 'db-pass', variable: 'DB_PASS')]) {
+                        sh ''' 
+                            docker-compose -f $DOCKER_COMPOSE_FILE run --rm -e DB_PASS=$DB_PASS app pytest -vv --junitxml=/usr/src/app/tests/test-results-api.xml /usr/src/app/tests/api/
+                        '''
+                    }
                     sh "cp ./tests/test-results-api.xml ./test-results-api.xml"
                 }
             }
