@@ -22,8 +22,8 @@ services:
   app: # This is the application service
     image: nyt-app-api
     build:
-      context: .  # Build context is the current directory
-      dockerfile: Dockerfile.api # Use this Dockerfile for building the image
+      context: ../  # Build context is the current directory
+      dockerfile: pipeline/Dockerfile.api # Use this Dockerfile for building the image
     volumes: 
       - .:/usr/src/app # Mount the application directory
     ports:  
