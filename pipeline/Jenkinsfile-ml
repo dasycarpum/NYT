@@ -1,4 +1,9 @@
 pipeline {
+
+    environment { 
+        DOCKER_COMPOSE_FILE = "pipeline/docker-compose.ml.yml"
+        DB_PASS = credentials('db-pass')
+    }
     
     agent any
 
@@ -36,6 +41,25 @@ pipeline {
                     python -m py_compile src/machine_learning/main.py
                 '''
                 stash(name: 'compiled-results-ml', includes: 'src/machine_learning/*.py*')
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                script {
+                    sh "docker-compose -f $DOCKER_COMPOSE_FILE down -v"
+                    sh "docker-compose -f $DOCKER_COMPOSE_FILE build app"
+        
+                    sh """
+                        docker-compose -f $DOCKER_COMPOSE_FILE run --rm -e DB_PASS=${DB_PASS} app pytest -vv --junitxml=/usr/src/app/tests/test-results-ml.xml /usr/src/app/tests/machine_learning/
+                    """
+                    sh "cp ./tests/test-results-ml.xml ./test-results-ml.xml"
+                }
+            }
+            post {
+                always {
+                    junit '**/test-results-ml.xml'
+                }
             }
         }
     }
