@@ -113,6 +113,7 @@ pipeline {
         }
 
         stage('Docker Push'){ 
+            environment
             {
                 DOCKER_PASS = credentials("DOCKER_HUB_PASS") 
             }
