@@ -28,5 +28,15 @@ pipeline {
                 '''
             }
         }
+
+        stage('Compile Python') {
+            steps {
+                sh '''#!/bin/bash
+                    source .NYT/bin/activate
+                    python -m py_compile src/machine_learning/main.py
+                '''
+                stash(name: 'compiled-results-ml', includes: 'src/machine_learning/*.py*')
+            }
+        }
     }
 }
