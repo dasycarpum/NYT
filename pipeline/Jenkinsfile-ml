@@ -129,5 +129,38 @@ pipeline {
                 }
             }
         }
+
+        stage('Deployment In Dev'){
+            environment
+            {
+                // KUBECONFIG = credentials("config") // retrieve kubeconfig from secret file saved on jenkins -> "access denied"
+                KUBECONFIG = "/home/roland/.kube/config" // but requires a change of owner (roland -> jenkins) for the folder and file : sudo chown -R jenkins:jenkins /home/roland/.kube/
+            }
+
+            steps {
+                script {
+                sh '''
+                
+                # Configure kubectl
+                export KUBECONFIG=$KUBECONFIG
+
+                # Switch to the 'dev' namespace
+                kubectl config set-context --current --namespace=dev
+
+                # Navigate to the directory containing the k8s manifests
+                cd k8s
+
+                # Apply Kubernetes manifests
+                kubectl apply -f secret.yaml
+                kubectl apply -f dump.yaml
+                kubectl apply -f app_ml.yaml
+
+                # Navigate back to the original directory
+                cd ..
+
+                '''
+                }
+            }
+        }
     }
 }
