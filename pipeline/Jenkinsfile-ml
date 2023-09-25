@@ -17,5 +17,16 @@ pipeline {
                 '''
             }
         } 
+
+        stage('Environment Check') {
+            steps {
+                sh '''#!/bin/bash
+                    source .NYT/bin/activate
+                    python -m site
+                    pwd
+                    ls
+                '''
+            }
+        }
     }
 }
