@@ -27,6 +27,16 @@ pipeline {
                     ls
                 '''
             }
+        }
+
+        stage('Compile Python') {
+            steps {
+                sh '''#!/bin/bash
+                    source .NYT/bin/activate
+                    python -m py_compile src/data_main/main.py
+                '''
+                stash(name: 'compiled-results-data', includes: 'src/data_main/*.py*')
+            }
         }  
     }
 }
