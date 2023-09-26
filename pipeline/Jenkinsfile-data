@@ -99,5 +99,15 @@ pipeline {
                 }
             }
         }
+
+        stage('Docker Compose Up') {
+            steps {
+                script {
+                    sh '''
+                        docker-compose -f $DOCKER_COMPOSE_FILE up -d
+                    '''
+                }
+            }
+        }
     }
 }
