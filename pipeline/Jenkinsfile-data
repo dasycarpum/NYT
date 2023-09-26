@@ -109,5 +109,15 @@ pipeline {
                 }
             }
         }
+
+        stage('Test Acceptance'){
+            steps {
+                    script {
+                    sh '''
+                        curl localhost
+                    '''
+                    }
+            }
+        }
     }
 }
