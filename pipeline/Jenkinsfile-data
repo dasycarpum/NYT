@@ -2,6 +2,12 @@ pipeline {
     environment { 
         DOCKER_COMPOSE_FILE = "pipeline/docker-compose.data.yml"
         DB_PASS = credentials('db-pass')
+        DOCKER_ID = "dasycarpum"
+        DOCKERFILE_PATH_DUMP = "pipeline/Dockerfile.dump"
+        DOCKER_IMAGE_DUMP = "nyt-dump"
+        DOCKER_TAG = "dt.v.${BUILD_ID}.0"
+        DOCKERFILE_PATH_DT = "pipeline/Dockerfile.data"
+        DOCKER_IMAGE_DT = "nyt-app-data"
     }
 
     agent any
@@ -68,6 +74,28 @@ pipeline {
             post {
                 always {
                     junit '**/test-results-*.xml'
+                }
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                script {
+                    sh '''
+                        # Check if Jenkins container exists
+                        if docker ps -a --format '{{.Names}}' | grep -Eq '^jenkins$'; then
+                            docker rm -f jenkins
+                        fi
+
+                        # Build nyt-dump image
+                        docker build -t $DOCKER_ID/$DOCKER_IMAGE_DUMP:$DOCKER_TAG -f $DOCKERFILE_PATH_DUMP .
+
+                        # Build nyt-app-data image
+                        docker build -t $DOCKER_ID/$DOCKER_IMAGE_DT:$DOCKER_TAG -f $DOCKERFILE_PATH_DT .
+
+                        # Time to ensure images are well constructed
+                        sleep 6
+                    '''
                 }
             }
         }
