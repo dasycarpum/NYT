@@ -1,0 +1,21 @@
+pipeline {
+
+    agent any
+
+    stages {
+        stage('Setup Environment') {
+            steps {
+                sh '''#!/bin/bash
+                    echo "Creating virtual environment..."
+                    python3 -m venv .NYT
+
+                    echo "Activating virtual environment..."
+                    source .NYT/bin/activate
+
+                    echo "Installing dependencies..."
+                    pip install -r requirements.txt
+                '''
+            }
+        }  
+    }
+}
