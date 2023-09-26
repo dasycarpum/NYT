@@ -1,4 +1,8 @@
 pipeline {
+    environment { 
+        DOCKER_COMPOSE_FILE = "pipeline/docker-compose.data.yml"
+        DB_PASS = credentials('db-pass')
+    }
 
     agent any
 
@@ -37,6 +41,35 @@ pipeline {
                 '''
                 stash(name: 'compiled-results-data', includes: 'src/data_main/*.py*')
             }
-        }  
+        }
+
+        stage('Unit Tests') {
+            steps {
+                script {
+                    sh "docker-compose -f $DOCKER_COMPOSE_FILE down -v"
+                    sh "docker-compose -f $DOCKER_COMPOSE_FILE build app"
+        
+                    sh """
+                        docker-compose -f $DOCKER_COMPOSE_FILE run --rm -e DB_PASS=${DB_PASS} app pytest -vv --junitxml=/usr/src/app/tests/test-results-data-collection.xml /usr/src/app/tests/data_collection/
+                    """
+                    sh "cp ./tests/test-results-data-collection.xml ./test-results-data-collection.xml"
+
+                    sh """
+                        docker-compose -f $DOCKER_COMPOSE_FILE run --rm -e DB_PASS=${DB_PASS} app pytest -vv --junitxml=/usr/src/app/tests/test-results-data-ingestion.xml /usr/src/app/tests/data_ingestion/
+                    """
+                    sh "cp ./tests/test-results-data-ingestion.xml ./test-results-data-ingestion.xml"
+
+                    sh """
+                        docker-compose -f $DOCKER_COMPOSE_FILE run --rm -e DB_PASS=${DB_PASS} app pytest -vv --junitxml=/usr/src/app/tests/test-results-data-main.xml /usr/src/app/tests/data_main/
+                    """
+                    sh "cp ./tests/test-results-data-main.xml ./test-results-data-main.xml"
+                }
+            }
+            post {
+                always {
+                    junit '**/test-results-*.xml'
+                }
+            }
+        }
     }
 }

@@ -22,10 +22,10 @@ services:
   app:  # This is the application service
     image: nyt-app-data
     build:
-      context: .  # Build context is the current directory
-      dockerfile: Dockerfile.data  # Use this Dockerfile for building the image
+      context: ../  # Build context is the NYT directory
+      dockerfile: pipeline/Dockerfile.data  # Use this Dockerfile for building the image
     volumes:
-      - .:/usr/src/app  # Mount the application directory
+      - ..:/usr/src/app  # Mount the application directory from de parent directory
     ports:
       - "8050:8050"
     environment:  # Environment variables for the application service
