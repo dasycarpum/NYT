@@ -17,7 +17,7 @@ spec:
           envFrom:
             - configMapRef:
                 name: date-config
-          image: dasycarpum/nyt-app-data:latest
+          image: dasycarpum/nyt-app-data
           imagePullPolicy: Always
           env:
           - name: DB_PASS
