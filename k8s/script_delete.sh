@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # Declare an array of deployments to delete
-declare -a deployments=("postgres-db-deployment" "python-app" "firefox-deployment")
+declare -a deployments=("python-app" "firefox-deployment")
+
+# Declare an array of statefulset to delete
+declare -a statefulsets=("postgres-db")
 
 # Declare an array of services to delete
 declare -a services=("postgres-service" "python-app-service" "firefox-service")
@@ -20,6 +23,13 @@ for deployment in "${deployments[@]}"
 do
   echo "Deleting deployment ${deployment}..."
   kubectl delete deployment ${deployment} -n ${NAMESPACE}
+done
+
+# Loop to delete statefulsets
+for statefulset in "${statefulsets[@]}"
+do
+  echo "Deleting statefulset ${statefulset}..."
+  kubectl delete statefulset ${statefulset} -n ${NAMESPACE}
 done
 
 # Loop to delete services

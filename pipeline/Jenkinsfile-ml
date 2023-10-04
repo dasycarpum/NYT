@@ -1,0 +1,172 @@
+pipeline {
+
+    environment { 
+        DOCKER_COMPOSE_FILE = "pipeline/docker-compose.ml.yml"
+        DB_PASS = credentials('db-pass')
+        DOCKER_ID = "dasycarpum"
+        DOCKERFILE_PATH_DUMP = "pipeline/Dockerfile.dump"
+        DOCKER_IMAGE_DUMP = "nyt-dump"
+        DOCKER_TAG = "ml.v.${BUILD_ID}.0"
+        DOCKERFILE_PATH_ML = "pipeline/Dockerfile.ml"
+        DOCKER_IMAGE_ML = "nyt-app-ml"
+    }
+    
+    agent any
+
+    stages {
+        stage('Setup Environment') {
+            steps {
+                sh '''#!/bin/bash
+                    echo "Creating virtual environment..."
+                    python3 -m venv .NYT
+
+                    echo "Activating virtual environment..."
+                    source .NYT/bin/activate
+
+                    echo "Installing dependencies..."
+                    pip install -r requirements.txt
+                '''
+            }
+        } 
+
+        stage('Environment Check') {
+            steps {
+                sh '''#!/bin/bash
+                    source .NYT/bin/activate
+                    python -m site
+                    pwd
+                    ls
+                '''
+            }
+        }
+
+        stage('Compile Python') {
+            steps {
+                sh '''#!/bin/bash
+                    source .NYT/bin/activate
+                    python -m py_compile src/machine_learning/main.py
+                '''
+                stash(name: 'compiled-results-ml', includes: 'src/machine_learning/*.py*')
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                script {
+                    sh "docker-compose -f $DOCKER_COMPOSE_FILE down -v"
+                    sh "docker-compose -f $DOCKER_COMPOSE_FILE build app"
+        
+                    sh """
+                        docker-compose -f $DOCKER_COMPOSE_FILE run --rm -e DB_PASS=${DB_PASS} app pytest -vv --junitxml=/usr/src/app/tests/test-results-ml.xml /usr/src/app/tests/machine_learning/
+                    """
+                    sh "cp ./tests/test-results-ml.xml ./test-results-ml.xml"
+                }
+            }
+            post {
+                always {
+                    junit '**/test-results-ml.xml'
+                }
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                script {
+                    sh '''
+                        # Check if Jenkins container exists
+                        if docker ps -a --format '{{.Names}}' | grep -Eq '^jenkins$'; then
+                            docker rm -f jenkins
+                        fi
+
+                        # Build nyt-dump image
+                        docker build -t $DOCKER_ID/$DOCKER_IMAGE_DUMP:$DOCKER_TAG -f $DOCKERFILE_PATH_DUMP .
+
+                        # Build nyt-app-ml image
+                        docker build -t $DOCKER_ID/$DOCKER_IMAGE_ML:$DOCKER_TAG -f $DOCKERFILE_PATH_ML .
+
+                        # Time to ensure images are well constructed
+                        sleep 6
+                    '''
+                }
+            }
+        }
+
+        stage('Docker Compose Up') {
+            steps {
+                script {
+                    sh '''
+                        docker-compose -f $DOCKER_COMPOSE_FILE up -d
+                    '''
+                }
+            }
+        }
+
+        stage('Test Acceptance'){
+            steps {
+                    script {
+                    sh '''
+                        curl localhost
+                    '''
+                    }
+            }
+
+        }
+
+        stage('Docker Push'){ 
+            environment
+            {
+                DOCKER_PASS = credentials("DOCKER_HUB_PASS") 
+            }
+
+            steps {
+
+                script {
+                sh '''
+                docker login -u $DOCKER_ID -p $DOCKER_PASS
+                docker push $DOCKER_ID/$DOCKER_IMAGE_DUMP:$DOCKER_TAG
+                docker push $DOCKER_ID/$DOCKER_IMAGE_ML:$DOCKER_TAG
+                '''
+                }
+            }
+        }
+
+        stage('Deployment In Dev'){
+            environment
+            {
+                // KUBECONFIG = credentials("config") // retrieve kubeconfig from secret file saved on jenkins -> "access denied"
+                KUBECONFIG = "/home/roland/.kube/config" // but requires a change of owner (roland -> jenkins) for the folder and file : sudo chown -R jenkins:jenkins /home/roland/.kube/
+            }
+
+            steps {
+                script {
+                sh '''
+                
+                # Configure kubectl
+                export KUBECONFIG=$KUBECONFIG
+
+                # Switch to the 'dev' namespace
+                kubectl config set-context --current --namespace=dev
+
+                # Navigate to the directory containing the k8s manifests
+                cd k8s
+
+                # Dynamically update the image tag in dump.yaml
+                sed -i 's|dasycarpum/nyt-dump|dasycarpum/nyt-dump:'"$DOCKER_TAG"'|' dump.yaml
+
+                # Dynamically update the image tag in app_ml.yaml
+                sed -i 's|dasycarpum/nyt-app-ml|dasycarpum/nyt-app-ml:'"$DOCKER_TAG"'|' app_ml.yaml
+
+                # Apply Kubernetes manifests
+                kubectl apply -f secret.yaml
+                kubectl apply -f dump.yaml
+                kubectl apply -f app_ml.yaml
+
+                # Navigate back to the original directory
+                cd ..
+
+                '''
+                }
+            }
+        }
+    }
+}

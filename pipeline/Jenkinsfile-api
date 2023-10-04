@@ -1,0 +1,170 @@
+pipeline {
+    environment { 
+        DOCKER_ID = "dasycarpum"
+        DOCKERFILE_PATH_DUMP = "pipeline/Dockerfile.dump"
+        DOCKER_IMAGE_DUMP = "nyt-dump"
+        DOCKERFILE_PATH_API = "pipeline/Dockerfile.api"
+        DOCKER_IMAGE_API = "nyt-app-api"
+        DOCKER_TAG = "api.v.${BUILD_ID}.0"
+        DOCKER_COMPOSE_FILE = "pipeline/docker-compose.api.yml"
+        DB_PASS = credentials('db-pass')
+    }
+    agent any
+
+    stages {
+        stage('Setup Environment') {
+            steps {
+                sh '''#!/bin/bash
+                    echo "Creating virtual environment..."
+                    python3 -m venv .NYT
+
+                    echo "Activating virtual environment..."
+                    source .NYT/bin/activate
+
+                    echo "Installing dependencies..."
+                    pip install -r requirements.txt
+                '''
+            }
+        }
+
+        stage('Environment Check') {
+            steps {
+                sh '''#!/bin/bash
+                    source .NYT/bin/activate
+                    python -m site
+                    pwd
+                    ls
+                '''
+            }
+        }
+
+        stage('Compile Python') {
+            steps {
+                sh '''#!/bin/bash
+                    source .NYT/bin/activate
+                    python -m py_compile src/api/main.py
+                '''
+                stash(name: 'compiled-results-api', includes: 'src/api/*.py*')
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                script {
+                    sh "docker-compose -f $DOCKER_COMPOSE_FILE down -v"
+                    sh "docker-compose -f $DOCKER_COMPOSE_FILE build app"
+        
+                    sh """
+                        docker-compose -f $DOCKER_COMPOSE_FILE run --rm -e DB_PASS=${DB_PASS} app pytest -vv --junitxml=/usr/src/app/tests/test-results-api.xml /usr/src/app/tests/api/
+                    """
+                    sh "cp ./tests/test-results-api.xml ./test-results-api.xml"
+                }
+            }
+            post {
+                always {
+                    junit '**/test-results-api.xml'
+                }
+            }
+        }
+
+        stage('Build Docker images') {
+            steps {
+                script {
+                    sh '''
+                        # Check if Jenkins container exists
+                        if docker ps -a --format '{{.Names}}' | grep -Eq '^jenkins$'; then
+                            docker rm -f jenkins
+                        fi
+
+                        # Build nyt-dump image
+                        docker build -t $DOCKER_ID/$DOCKER_IMAGE_DUMP:$DOCKER_TAG -f $DOCKERFILE_PATH_DUMP .
+
+                        # Build nyt-app-api image
+                        docker build -t $DOCKER_ID/$DOCKER_IMAGE_API:$DOCKER_TAG -f $DOCKERFILE_PATH_API .
+
+                        # Time to ensure images are well constructed
+                        sleep 6
+                    '''
+                }
+            }
+        }
+        
+        stage('Docker Compose Up') {
+            steps {
+                script {
+                    sh '''
+                        docker-compose -f $DOCKER_COMPOSE_FILE up -d
+                    '''
+                }
+            }
+        }
+
+        stage('Test Acceptance'){ // launch the curl command to validate that the container responds to the request
+            steps {
+                    script {
+                    sh '''
+                    curl localhost
+                    '''
+                    }
+            }
+
+        }
+
+        stage('Docker Push'){ // pass the built image to the docker hub account
+            environment
+            {
+                DOCKER_PASS = credentials("DOCKER_HUB_PASS") // retrieve  docker password from secret text saved on jenkins
+            }
+
+            steps {
+
+                script {
+                sh '''
+                docker login -u $DOCKER_ID -p $DOCKER_PASS
+                docker push $DOCKER_ID/$DOCKER_IMAGE_DUMP:$DOCKER_TAG
+                docker push $DOCKER_ID/$DOCKER_IMAGE_API:$DOCKER_TAG
+                '''
+                }
+            }
+        }
+
+        stage('Deployment In Dev'){
+            environment
+            {
+                // KUBECONFIG = credentials("config") // retrieve kubeconfig from secret file saved on jenkins -> "access denied"
+                KUBECONFIG = "/home/roland/.kube/config" // but requires a change of owner (roland -> jenkins) for the folder and file : sudo chown -R jenkins:jenkins /home/roland/.kube/
+            }
+
+            steps {
+                script {
+                sh '''
+                
+                # Configure kubectl
+                export KUBECONFIG=$KUBECONFIG
+
+                # Switch to the 'dev' namespace
+                kubectl config set-context --current --namespace=dev
+
+                # Navigate to the directory containing the k8s manifests
+                cd k8s
+
+                # Dynamically update the image tag in dump.yaml
+                sed -i 's|dasycarpum/nyt-dump|dasycarpum/nyt-dump:'"$DOCKER_TAG"'|' dump.yaml
+
+                # Dynamically update the image tag in app_api.yaml
+                sed -i 's|dasycarpum/nyt-app-api|dasycarpum/nyt-app-api:'"$DOCKER_TAG"'|' app_api.yaml
+
+                # Apply Kubernetes manifests
+                kubectl apply -f secret.yaml
+                kubectl apply -f dump.yaml
+                kubectl apply -f app_api.yaml
+
+                # Navigate back to the original directory
+                cd ..
+
+                '''
+                }
+            }
+        }
+    }
+}

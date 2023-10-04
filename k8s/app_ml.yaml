@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: python-app
-          image: dasycarpum/nyt-app-ml:latest
+          image: dasycarpum/nyt-app-ml
           imagePullPolicy: Always
           env:
           - name: DB_PASS
