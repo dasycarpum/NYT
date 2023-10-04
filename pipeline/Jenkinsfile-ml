@@ -150,6 +150,12 @@ pipeline {
                 # Navigate to the directory containing the k8s manifests
                 cd k8s
 
+                # Dynamically update the image tag in dump.yaml
+                sed -i 's|dasycarpum/nyt-dump|dasycarpum/nyt-dump:'"$DOCKER_TAG"'|' dump.yaml
+
+                # Dynamically update the image tag in app_ml.yaml
+                sed -i 's|dasycarpum/nyt-app-ml|dasycarpum/nyt-app-ml:'"$DOCKER_TAG"'|' app_ml.yaml
+
                 # Apply Kubernetes manifests
                 kubectl apply -f secret.yaml
                 kubectl apply -f dump.yaml
