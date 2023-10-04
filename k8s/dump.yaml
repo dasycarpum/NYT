@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: postgres-db
-          image: dasycarpum/nyt-dump:latest
+          image: dasycarpum/nyt-dump
           env:
             - name: POSTGRES_DB
               value: "nyt"
